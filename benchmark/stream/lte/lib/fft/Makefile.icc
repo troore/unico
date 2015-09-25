@@ -1,0 +1,54 @@
+
+include ../../../common/makefile.config
+
+SRC = fft.cpp test.cpp ../util.cpp
+#SRC = test.cpp ../util.cpp
+SRC += $(LIB_DIR)/check/check.cpp $(LIB_DIR)/timer/meas.cpp
+
+SRC_OMP = $(subst fft, fft_omp, $(SRC))
+
+OBJS = $(patsubst %.cpp, %.o, $(SRC))
+OBJS_OMP = $(patsubst %.cpp, %.o, $(SRC_OMP))
+
+INC_DIRS = ./ ../ $(LIB_DIR) $(LIB_DIR)/power
+
+ICPCFLAGS += $(INC_DIRS:%=-I%)
+
+#LINKFLAGS += -L$(LIB_DIR)/fft/c -lfft
+
+ifeq ($(VEC),1)
+	ICPCFLAGS += -vec -vec-report2
+#	ICPCFLAGS += -ftree-vectorize -msse2 -ffast-math -vec-report
+else
+	ICPCFLAGS += -no-vec
+endif
+
+ifeq ($(RAPL),1)
+	LINKFLAGS += -L$(LIB_DIR)/power/papi-rapl -lraplpower
+	ICPCFLAGS += -D_RAPL
+endif
+
+
+TARGETS = fft fft_omp
+
+all: $(TARGETS) 
+
+#fft: $(OBJS) libfft.a
+fft: $(OBJS)
+	$(ICPC) -o $@ $(OBJS) $(LINKFLAGS)
+
+libfft.a: fft.o ../util.o
+	ar rcs $@ $^
+
+fft_omp: $(OBJS_OMP)
+	$(ICPC) -o $@ $^ $(LINKFLAGS) -openmp
+
+fft_omp.o: fft_omp.cpp
+	$(ICPC) -o $@ -c $< $(ICPCFLAGS) -openmp
+
+%.o: %.cpp
+	$(ICPC) -o $@ -c $< $(ICPCFLAGS)
+
+clean:
+	rm -rf *.o $(OBJS) $(OBJS_OMP) $(TARGETS) *.a *.so
+
