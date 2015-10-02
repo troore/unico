@@ -96,23 +96,23 @@ void equalizer_chain_seq(LTE_PHY_PARAMS *lte_phy_params)
 {
 	int i;
 
-	double tstart, tend, ttime;
+//	double tstart, tend, ttime;
 	
 	geneDMRS(lte_phy_params->DMRS, lte_phy_params->N_tx_ant, lte_phy_params->N_dft_sz);
 	
 //	SubCarrierMapping(lte_phy_params, lte_phy_params->resm_in, lte_phy_params->resm_out);
 //	ofmodulating(lte_phy_params, lte_phy_params->resm_out, lte_phy_params->ofmod_out);
 	for (i = 0; i < num_frames; i++) {
-		tstart = dtime();
+//		tstart = dtime();
 		ofdemodulating(lte_phy_params, lte_phy_params->ofdemod_in, lte_phy_params->ofdemod_out);
-		tend = dtime();
-		printf("%.3fms\n", tend - tstart);
+//		tend = dtime();
+//		printf("%.3fms\n", tend - tstart);
 		SubCarrierDemapping(lte_phy_params, lte_phy_params->ofdemod_out, lte_phy_params->resdm_out);
-		tstart = dtime();
-		printf("%.3fms\n", tstart - tend);
+//		tstart = dtime();
+//		printf("%.3fms\n", tstart - tend);
 		Equalizing(lte_phy_params, lte_phy_params->resdm_out, lte_phy_params->eq_out);
-		tend = dtime();
-		printf("%.3fms\n", tend - tstart);
+//		tend = dtime();
+//		printf("%.3fms\n", tend - tstart);
 	}
 }
 

@@ -7,7 +7,9 @@
 #include "SimpleULRx.h"
 #include "timer/timer.h"
 
-LTE_PHY_PARAMS lte_phy_params[3];
+#define NUM_THREADS_SIMPLE_RX 3
+
+LTE_PHY_PARAMS lte_phy_params[NUM_THREADS_SIMPLE_RX];
 int num_frames;
 
 void test_equalizer_chain_seq(LTE_PHY_PARAMS *lte_phy_params)
@@ -60,7 +62,7 @@ void test(LTE_PHY_PARAMS *lte_phy_params)
 
 int main(int argc, char *argv[])
 {
-	parse_args_and_init_lte_phy(argc, argv, lte_phy_params, 3);
+	parse_args_and_init_lte_phy(argc, argv, lte_phy_params, NUM_THREADS_SIMPLE_RX);
 //	parse_args_and_init_lte_phy(argc, argv, &(lte_phy_params[1]));
 //	parse_args_and_init_lte_phy(argc, argv, &(lte_phy_params[2]));
 	
