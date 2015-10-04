@@ -1,10 +1,6 @@
 #ifndef __DINIC_H_
 #define __DINIC_H_
 
-#define N 201000
-#define M  2001000
-#define INF 100000000
-
 #define WHITE 0
 #define GRAY 1
 #define BLACK 2
@@ -37,7 +33,7 @@ public:
 	void enqueue(int x);
 	int dequeue();
 	void add_edge(int u, int v, int w);
-	void read();
+	void cst_graph();
 	int bfs();
 	void dfs(int u);
 	void show();

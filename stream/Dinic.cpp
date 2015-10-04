@@ -35,7 +35,7 @@ void Dinic::add_edge(int u, int v, int w)
 	Head[v] = cnt++;
 }
 
-void Dinic::read()
+void Dinic::cst_graph()
 {
 	int i, w;
 	
@@ -80,7 +80,7 @@ int Dinic::bfs()
     return color[t] == BLACK;
 }
 
-int find(int u, int cur_residual_flow)
+int Dinic::find(int u, int cur_residual_flow)
 {
 	int i;
     int result = 0, tmp = 0;

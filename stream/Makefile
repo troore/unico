@@ -1,6 +1,8 @@
 TARGETS := stream.out
 
-SRCS := framework.cpp dinic.cpp disjoint.cpp priorityQ.cpp
+SRCS := main.cpp Framework.cpp
+
+OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 
 CXXFLAGS := -g -Wall
 LINKFLAGS :=
@@ -8,7 +10,7 @@ LINKFLAGS :=
 stream.out: $(OBJS)
 	$(CXX) -o $@ $^ $(LINKFLAGS)
 
-%.cpp: %.o
+%.o: %.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
 clean:

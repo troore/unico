@@ -1,0 +1,13 @@
+num_cores_on_cpu
+
+vector: bandwidth from CPU to FPGA and from FPGA to CPU
+
+scalar: num_freqs
+vector: freq0 freq1 ...
+
+scalar: num_tasks_in_stream
+vector: latencies of tasks on CPU with highest frequency
+vector: powers
+vector: latencies of tasks on FPGA with highest resource usage
+vector: powers
+vector: data size transferred between tasks
