@@ -5,39 +5,31 @@
 #define GRAY 1
 #define BLACK 2
 
-class Edge {
-	int next;
-	int to;
-	int len;
-public:
-	int get_next() { return next; }
-	int get_to() { return to; }
-	int get_len() { return len; }
-};
-
 class Dinic {
-	Edge edge[M];
-	int Head[N];
-	int s, t, cnt;
-	int S[N], T[N];
-	int cnts, cntt;
+	int s, t;
+	int n, m;
+//	int S[N], T[N];
+//	int cnts, cntt;
+	Graph *wg;
 
-	int a[N], b[N], aa[M], bb[M], n, m;
+//	int a[N], b[N], aa[M], bb[M], n, m;
 
 	int head, tail;
-	int q[N + 2];
-	int color[N];
-	int layer[N];
+	int *q;
+	int *color;
+	int *layer;
 public:
+	Dinic(int n, int m);
+	~Dinic();
 	int min(int a, int b);
 	void enqueue(int x);
 	int dequeue();
-	void add_edge(int u, int v, int w);
+//	void add_edge(int u, int v, int w);
 	void cst_graph();
 	int bfs();
 	void dfs(int u);
 	void show();
-	int max_flow();
+	int max_flow(int *S, int *T, int &cnts, int &cntt);
 };
 
 #endif

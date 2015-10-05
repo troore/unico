@@ -2,13 +2,14 @@
 #define __FRAMEWORK_H_
 
 //#include "PriorityQ.h"
-//#include "Dinic.h"
+#include "Dinic.h"
 //#include "DisjointSet.h"
 
 class Framework {
 	double system_power_cap;
 	double cpu_power_cap;
 	double fpga_power_cap;
+	double latency_constraint;
 	int num_cores_on_cpu;
 	int num_tasks_in_stream;
 	double bdw_cpu_fpga, bdw_fpga_cpu;
@@ -35,14 +36,17 @@ class Framework {
 	
 	double latency_lower_bound;
 	double throughput_upper_bound;
+
+	int *S, *T;
 	
 //	PriorityQ priq;
+	Dinic *dinic;
 //	DisjointSet disjset;
 public:
 	Framework();
 	~Framework();
 	void read_profile_config();
-	void init_predict_model();
+	int init_predict_model();
 	void set_default_bounds();
 	void iterate();
 };

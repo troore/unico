@@ -5,7 +5,7 @@
 #include "Framework.h"
 
 Framework::Framework()
-{
+{	
 	latency_lower_bound = 0;
 	throughput_upper_bound = 0;
 }
@@ -74,7 +74,7 @@ void Framework::read_profile_config()
 	fin.close();
 }
 
-void Framework::init_predict_model()
+int Framework::init_predict_model()
 {
 	// profiling results of the first task
 	double p = cpu_power_under_highest_freq[0];
@@ -83,13 +83,63 @@ void Framework::init_predict_model()
 	
 	lambda = p / pow(f, 3.0);
 	mu = l * f;
+
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		int j = num_freqs - 1;
+		/*
+		 * tentatively try a lower frequency
+		 */
+		while (p >= cpu_power_cap && j > 0) {
+			j = j - 1;
+			f = cpu_freq_scale_space[j];
+			p = lambda * pow(f, 3.0);
+		}
+		if (j <= 0)
+			return 1;
+		else {
+			cpu_power_under_highest_freq[i] = p;
+			cpu_latency_under_highest_freq[i] = mu * f;
+		}
+	}
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		l = cpu_latency_under_highest_freq[i];
+		if (l >= latency_constraint)
+			return 2;
+	}
+
+	return 0;
 }
 
-void set_default_bounds()
+void Framework::set_default_bounds()
 {
-	dinic.cst_graph();
-	latency_lower_bound = dinic.max_flow();
-	throughput_upper_bound = 1.0 / latench_lower_bound;
+	double *aa, *bb, *ws, *wt;
+
+	int n = num_tasks_in_stream;
+	int m = n - 1;
+
+	aa = new double[m];
+	bb = new double[m];
+	ws = new double[m];
+	wt = new double[m];
+
+	for (int i = 0; i < m; i++) {
+		aa[i] = i;
+		bb[i] = i + 1;
+		ws[i] = transfer_data_size[i] / bdw_cpu_fpga;
+		wt[i] = transfer_data_size[i] / bdw_fpga_cpu;
+	}
+
+	dinic = new Dinic(n, m);
+	
+	dinic.cst_graph(cpu_latency_under_highest_freq, fpga_latency_under_highest_freq,
+					aa, bb, ws, wt, n, m);
+	latency_lower_bound = dinic.max_flow(S, T);
+	throughput_upper_bound = (1.0 / latench_lower_bound);
+
+	delete[] aa;
+	delete[] bb;
+	delete[] ws;
+	delete[] wt;
 }
 
 void Framework::iterate()
@@ -104,4 +154,7 @@ Framework::~Framework()
 	delete[] fpga_latency_under_highest_resusg;
 	delete[] fpga_power_under_highest_resusg;
 	delete[] transfer_data_size;
+
+	if (dinic)
+		delete dinic;
 }
