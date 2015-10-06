@@ -110,6 +110,40 @@ int Framework::init_predict_model()
 	return 0;
 }
 
+void Framework::init_task_chain()
+{
+	task_chain = new Task[num_tasks_in_stream];
+
+	/*
+	 * Initiate the task chain.
+	 */
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		task_chain[i]->set_id(i);
+		if (0 == v_map_result[i]) {
+			task_chain[i]->set_latency(cpu_latency_under_highest_freq[i]);
+			task_chain[i]->set_power(cpu_power_under_highest_freq[i]);
+		}
+		else {
+			task_chain[i]->set_latency(fpga_latency_under_highest_freq[i]);
+			task_chain[i]->set_power(fpga_power_under_highest_freq[i]);
+		}
+		task_chain[i]->set_lop();
+	}
+
+	/*
+	 * Initiate disjoint set.
+	 */
+	disjset = new DisjointSet(num_tasks_in_stream);
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		disjset->make_set(i);
+	}
+
+	/*
+	 * Initiate priority queue.
+	 */
+	priq->Build_Min_Heap(task_chain);
+}
+
 void Framework::set_default_bounds()
 {
 	double *aa, *bb, *ws, *wt;
@@ -183,7 +217,7 @@ void Framework::iterate()
 
 double Framework::get_stage_length()
 {
-	return priq->Heap_Max_Key();
+	return disjset->get_max_set_size();
 }
 
 void Framework::recover_stream()
@@ -198,8 +232,8 @@ double Framework::insert_bubble()
 	int core_id, neb_core_id;
 	double next_stg_len_bound;
 
-	core_id = disjset->get_min_latency_core_id();
-	neb_core_id = disjset->get_neb_core_id(core_id);
+	core_id = disjset->get_min_set_size_id();
+	neb_core_id = disjset->get_neb_set_id(core_id);
 
 	disjset->union_set(core_id, neb_core_id);
 
@@ -225,6 +259,9 @@ Framework::~Framework()
 	delete[] fpga_latency_under_highest_resusg;
 	delete[] fpga_power_under_highest_resusg;
 	delete[] transfer_data_size;
+
+	if (task_chain)
+		delete[] task_chain;
 
 	if (dinic)
 		delete dinic;

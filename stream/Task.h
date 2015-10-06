@@ -2,6 +2,7 @@
 #define __TASK_H_
 
 class Task {
+	int id;
 	double latency;
 	double power;
 	double lop;

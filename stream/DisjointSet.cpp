@@ -1,23 +1,21 @@
 
+#include "DisjointSet.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+DisjointSet::DisjointSet(int n)
+	: num_atomic(n)
+{
+	p = new int[n];
+	size = new double[n];
+}
 
-#define N 30001
-//#define M 501
-
-int p[N];
-//int rank[N];
-int size[N]; // set size
-
-void make_set(int x)
+void DisjointSet::make_set(int x, double lop)
 {
 	p[x] = x;
 //	rank[x] = 1;
-	size[x] = 1;
+	size[x] = lop;
 }
 
-int find_set(int x)
+int DisjointSet::find_set(int x)
 {
 	/*
 	if (p[x] != x)
@@ -41,7 +39,7 @@ int find_set(int x)
 	return p[x];
 }
 
-void link(int x, int y)
+void DisjointSet::link(int x, int y)
 {
 	if (x < y) {
 		p[y] = x;
@@ -61,32 +59,112 @@ void link(int x, int y)
 		;
 }
 
-void union_set(int x, int y)
+void DisjointSet::union_set(int x, int y)
 {
 	link(find_set(x), find_set(y));
 }
 
-int main(int argc, char *argv[])
+double DisjointSet::get_min_set_size()
 {
-	int i, j;
-	int n, m, s;
-	int x, y;
-
-	while (scanf("%d %d", &n, &m)) {
-		if (n == 0 && m == 0)
-			break;
-		for (i = 0; i < n; i++)
-			make_set(i);
-		for (i = 0; i < m; i++) {
-			scanf("%d", &s);
-			scanf("%d", &x);
-			for (j = 1; j < s; j++) {
-				scanf("%d", &y);
-				union_set(x, y);
-			}
-		}
-		printf("%d\n", size[0]);
+	double tmp = -1.0;
+	
+	for (int i = 0; i < num_atomic; i++) {
+		if (tmp == -1.0 || (tmp - size[i]) > 0.00001)
+			tmp = size[i];
 	}
 
-	return 0;
+	return res;
+}
+
+int DisjointSet::get_min_set_size_id()
+{
+	double tmp = -1.0;
+	int id;
+	
+	for (int i = 0; i < num_atomic; i++) {
+		if (res == -1.0 || (res - size[i]) > 0.00001) {
+			res = size[i];
+			id = i;
+		}
+	}
+
+	return id;
+}
+
+double DisjointSet::get_max_set_size()
+{
+	double tmp = 0.0;
+	
+	for (int i = 0; i < num_atomic; i++) {
+		if ((size[i] - tmp) > 0.00001)
+			tmp = size[i];
+	}
+
+	return res;
+}
+
+int DisjointSet::get_max_set_size_id()
+{
+	double tmp = 0.0;
+	int id;
+	
+	for (int i = 0; i < num_atomic; i++) {
+		if ((size[i] - res) > 0.00001) {
+			res = size[i];
+			id = i;
+		}
+	}
+
+	return id;
+}
+
+int DisjointSet::get_neb_set_id(int id)
+{
+	int i, j;
+	double down, up;
+
+	if (id >= (num_atomic - 1)) {
+		for (i = 0; i < id; i++) {
+			if (size[i] != 0) {
+				down = size[i]
+					break;
+			}
+		}
+
+		return i;
+	}
+	else if {
+		for (j = id + 1; j < num_atomic; j++) {
+			if (size[j] != 0) {
+				up = size[j];
+				break;
+			}
+		}
+
+		return j;
+	}
+	else {
+		for (i = 0; i < id; i++) {
+			if (size[i] != 0) {
+				down = size[i]
+					break;
+			}
+		}
+		for (j = id + 1; j < num_atomic; j++) {
+			if (size[j] != 0) {
+				up = size[j];
+				break;
+			}
+		}
+
+		return (down - up < 0.00001) ? i : j;
+	}
+}
+
+DisjointSet::~DisjointSet()
+{
+	if (p)
+		delete[] p;
+	if (size)
+		delete[] size;
 }
