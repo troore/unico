@@ -164,8 +164,8 @@ int PriorityQ::Heap_Max_Key_Id()
 void PriorityQ::Heap_Init (int k)
 {
 	min_heap_size = max_heap_size = 0;
-	Max_Heap_Insert(NEG_INFINITY, 0);
-	Min_Heap_Insert(POS_INFINITY, 0);
+//	Max_Heap_Insert(NEG_INFINITY, 0);
+//	Min_Heap_Insert(POS_INFINITY, 0);
 	for (int i = 1; i <= k; i++) {
 		Max_Heap_Insert(key[i], idx[i]);
 		Min_Heap_Insert(key[i], idx[i]);

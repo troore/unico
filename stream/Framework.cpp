@@ -131,9 +131,9 @@ void Framework::set_default_bounds()
 
 	dinic = new Dinic(n, m);
 	
-	dinic.cst_graph(cpu_latency_under_highest_freq, fpga_latency_under_highest_freq,
+	dinic->cst_graph(cpu_latency_under_highest_freq, fpga_latency_under_highest_freq,
 					aa, bb, ws, wt, n, m);
-	latency_lower_bound = dinic.max_flow(S, T);
+	latency_lower_bound = dinic->max_flow(S, T);
 	throughput_upper_bound = (1.0 / latench_lower_bound);
 
 	delete[] aa;
@@ -144,8 +144,79 @@ void Framework::set_default_bounds()
 
 void Framework::iterate()
 {
-	
+	bool accepted = false;
+	double stg_len, next_stg_len, throughput;
+	double system_power;
+	int i;
+	i = num_tasks_in_stream;
+
+	while (!accepted) {
+		stg_len = get_stage_length();
+		next_stg_len = get_next_stage_length();
+		throughput = 1.0 / stg_len;
+		if (stg_len >= next_stg_len || i <= 0) {
+			recover_stream();
+			insert_bubble();
+		}
+		if (throughput > throughput_upper_bound) {
+			throughput = throughput_upper_bound;
+			accepted = true;
+		}
+		else {
+			system_power = disjset->system_power_consumption();
+			while (system_power > system_power_cap) {
+				DVFS();
+				stg_len = get_stage_length();
+				if (stg_len >= next_stg_len || i <= 0)
+					break;
+			}
+			if (system_power <= system_power_cap) {
+				accepted = true;
+			}
+			else {
+				dinic->cst_graph(task_chain);
+				dinic->max_flow(S, T, &cnts, &cntt);
+			}
+		}
+	}
 }
+
+double Framework::get_stage_length()
+{
+	return priq->Heap_Max_Key();
+}
+
+void Framework::recover_stream()
+{
+	priq = priq_bak;
+	disjset = disjset_bak;
+}
+
+double Framework::insert_bubble()
+{
+	// bubble insertion
+	int core_id, neb_core_id;
+	double next_stg_len_bound;
+
+	core_id = disjset->get_min_latency_core_id();
+	neb_core_id = disjset->get_neb_core_id(core_id);
+
+	disjset->union_set(core_id, neb_core_id);
+
+	disjset_bak = disjset;
+	core_id = disjset_bak->get_min_latency_core_id();
+	next_stg_len_bound = disjset_bak->get_min_latency();
+	neb_core_id = disjset_bak->get_neb_core_id(core_id);
+
+	disjset_bak->union_set(core_id, neb_core_id);
+	
+	// reserve mapping and scheduling results
+	// before DVFS and remapping and rescheduling
+	disjset_bak = disjset;
+
+	return next_stg_len_bound;
+}
+
 Framework::~Framework()
 {
 	delete[] cpu_freq_scale_space;

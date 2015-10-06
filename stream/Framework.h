@@ -1,9 +1,9 @@
 #ifndef __FRAMEWORK_H_
 #define __FRAMEWORK_H_
 
-//#include "PriorityQ.h"
+#include "PriorityQ.h"
 #include "Dinic.h"
-//#include "DisjointSet.h"
+#include "DisjointSet.h"
 
 class Framework {
 	double system_power_cap;
@@ -37,11 +37,18 @@ class Framework {
 	double latency_lower_bound;
 	double throughput_upper_bound;
 
+	// cut result
 	int *S, *T;
+	/*
+	 * vector stores map result:
+	 * 0: CPU
+	 * 1: FPGA
+	 */
+	int *v_map_result;
 	
-//	PriorityQ priq;
+	PriorityQ *priq_bak, *priq;
 	Dinic *dinic;
-//	DisjointSet disjset;
+	DisjointSet *disjset_bak, *disjset;
 public:
 	Framework();
 	~Framework();
