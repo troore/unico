@@ -1,10 +1,16 @@
 #ifndef __DISJOINTSET_H_
 #define __DISJOINTSET_H_
 
+#include "Task.h"
+
 class DisjointSet {
-	int num_atomic;
+	int num_elems;
+	Task *task_chain;
 	int *p;
-	double *size;
+	int *set_size;
+	double *set_latency;
+	double *set_power;
+	double *set_lop;
 public:
 	DisjointSet();
 	~DisjointSet();
@@ -12,11 +18,12 @@ public:
 	int find_set(int x);
 	void union_set(int x, int y);
 	void link(int x, int y);
-	double get_min_set_size();
-	int get_min_set_size_id();
-	double get_max_set_size();
-	int get_max_set_size_id();
-	int get_neb_set_id(int id)
+	double min_set_size();
+	int min_set_size_id();
+	double max_set_size();
+	int max_set_size_id();
+	int neb_set_id(int id);
+	double get_min_set_latency(int x);
 };
 
 #endif

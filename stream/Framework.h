@@ -59,6 +59,8 @@ public:
 	void init_task_chain();
 	void set_default_bounds();
 	void iterate();
+	bool DVFS_sync();
+	bool DVFS_async();
 };
 
 #endif

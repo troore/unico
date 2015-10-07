@@ -2,7 +2,7 @@
 #ifndef __PRIORITYQ_H_
 #define __PRIORITYQ_H_
 
-#define N (1000000 + 2)
+#include "Task.h"
 
 #define PARENT(i)	(i / 2) 
 #define LEFT(i)		(i * 2)
@@ -12,31 +12,32 @@
 #define POS_INFINITY	(0x7FFFFFFF)
 
 class PriorityQ {
-	int *key;
-	int *idx;
-
+	int len;
 	int min_heap_size, max_heap_size;
-	int *min_heap, *max_heap;
-	int *min_heap_idx, *max_heap_idx;
+	Task **min_task_heap, **max_task_heap;
 public:
 	PriorityQ(int n);
 	~PriorityQ();
 	void read(int n);
-	void Exchange(int *x, int *y);
-	void Max_Heapify(int i);
-	int Max_Heap_Extract_Top();
-	void Max_Heap_Insert (int key, int idx);
-	int Heap_Max_Key();
-	int Heap_Max_Key_Id();
+	void exchange(Task *x, Task *y);
 
-	void Min_Heapify (int i);
-	int Min_Heap_Extract_Top ();
-	void Min_Heap_Insert (int key, int idx);
-	int Heap_Min_Key();
-	int Heap_Min_Key_Id();
-
-	void Heap_Init (int k);
-	void Slide_Window(int n, int k);
+	void max_heap_init();
+	void max_heapify(int i);
+	Task *max_heap_extract_top();
+	void max_heap_insert(Task *key);
+	Task *heap_max_key();
+	int heap_max_key_Id();
+	void min_heap_replace_with_key(int idx, Task *key);
+	void min_heap_delete_key(int idx);
+	
+	void min_heap_init();
+	void min_heapify(int i);
+	Task *min_heap_extract_top();
+	void min_heap_insert(Task *key);
+	Task *heap_min_key();
+	int heap_min_key_id();
+	void min_heap_replace_with_key(int idx, Task *key);
+	void min_heap_delete_key(int idx);
 };
 
 #endif

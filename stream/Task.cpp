@@ -4,7 +4,8 @@ void Task::Task()
 {
 }
 
-void Task::Task(int x):id(x)
+void Task::Task(int x, int t)
+	: id(x), type(t)
 {
 }
 

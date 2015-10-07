@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <stack>
 #include <cmath>
 #include "Framework.h"
 
@@ -118,14 +119,26 @@ void Framework::init_task_chain()
 	 * Initiate the task chain.
 	 */
 	for (int i = 0; i < num_tasks_in_stream; i++) {
-		task_chain[i]->set_id(i);
+		double l, p;
+		
+		task_chain[i]->set_id(i, v_map_result[i]);
 		if (0 == v_map_result[i]) {
-			task_chain[i]->set_latency(cpu_latency_under_highest_freq[i]);
-			task_chain[i]->set_power(cpu_power_under_highest_freq[i]);
+			// CPU
+			l = cpu_latency_under_highest_freq[i];
+			p = cpu_power_under_highest_freq[i];
+			task_chain[i]->set_latency(l);
+			task_chain[i]->set_power(p);
 		}
 		else {
-			task_chain[i]->set_latency(fpga_latency_under_highest_freq[i]);
-			task_chain[i]->set_power(fpga_power_under_highest_freq[i]);
+			// FPGA
+			l = fpga_latency_under_highest_freq[i];
+			task_chain[i]->set_latency(l);
+			/*
+			  * Use lowest CPU frequency when there is a FPGA task.
+			  */
+			p = fpga_power_under_highest_freq[i] +
+				lambda * pow(cpu_freq_scale_space[0], 3.0);
+			task_chain[i]->set_power(p);
 		}
 		task_chain[i]->set_lop();
 	}
@@ -134,9 +147,12 @@ void Framework::init_task_chain()
 	 * Initiate disjoint set.
 	 */
 	disjset = new DisjointSet(num_tasks_in_stream);
+	/*
 	for (int i = 0; i < num_tasks_in_stream; i++) {
 		disjset->make_set(i);
 	}
+	*/
+	disjset->build_disjset();
 
 	/*
 	 * Initiate priority queue.
@@ -197,7 +213,7 @@ void Framework::iterate()
 			accepted = true;
 		}
 		else {
-			system_power = disjset->system_power_consumption();
+			system_power = get_system_power_consumption();
 			while (system_power > system_power_cap) {
 				DVFS();
 				stg_len = get_stage_length();
@@ -217,7 +233,12 @@ void Framework::iterate()
 
 double Framework::get_stage_length()
 {
-	return disjset->get_max_set_size();
+	return disjset->max_set_size();
+}
+
+double Framework::get_system_power_consumption()
+{
+	return disjset->system_power_consumption();
 }
 
 void Framework::recover_stream()
@@ -232,15 +253,15 @@ double Framework::insert_bubble()
 	int core_id, neb_core_id;
 	double next_stg_len_bound;
 
-	core_id = disjset->get_min_set_size_id();
-	neb_core_id = disjset->get_neb_set_id(core_id);
+	core_id = disjset->min_set_size_id();
+	neb_core_id = disjset->neb_set_id(core_id);
 
 	disjset->union_set(core_id, neb_core_id);
 
 	disjset_bak = disjset;
-	core_id = disjset_bak->get_min_latency_core_id();
-	next_stg_len_bound = disjset_bak->get_min_latency();
-	neb_core_id = disjset_bak->get_neb_core_id(core_id);
+	core_id = disjset_bak->min_latency_core_id();
+	next_stg_len_bound = disjset_bak->min_set_latency();
+	neb_core_id = disjset_bak->neb_core_id(core_id);
 
 	disjset_bak->union_set(core_id, neb_core_id);
 	
@@ -249,6 +270,54 @@ double Framework::insert_bubble()
 	disjset_bak = disjset;
 
 	return next_stg_len_bound;
+}
+
+bool Framework::DVFS_sync()
+{}
+
+bool Framework::DVFS_async(double stg_len_limit)
+{
+	std::stack<Task *> buffer;
+	Task *pt;
+	int tid, fid, fid_new;
+	double l_task, l_set, l_set_new;
+	bool flag;
+
+	flag = false;
+	while (pt = priq->Heap_Min_Key()) {
+		id = pt->get_id();
+		fid = pt->get_freq_id();
+		if (fid + 1 < num_freqs) {
+			// if there is frequency scaling space, try to do it
+			fid_new = fid + 1;
+			l_set = disjset->get_min_set_latency(id);
+			l_task = pt->get_latency();
+			l_tmp = l - l_task + lambda * pow(fid_new, 3.0);
+			if (l_tmp > stg_len_limit) {
+				buffer.push(priq->min_heap_extract_top());
+			}
+			else {
+				// do DVFS
+				//	lop_task_new = l_task_new / p_task_new;
+				pt->set_latency(l_task_new);
+				pt->set_power(p_task_new);
+				pt->set_lop();
+				priq->min_heap_extract_top();
+				priq->min_heap_insert_key(pt);
+				disjset->update_elem(tid);
+				
+				flag = true;
+				break;
+			}
+		}
+	}
+
+	while (!buffer.empty()) {
+		pt = buffer.pop();
+		priq->Min_Heap_Insert(pt);
+	}
+
+	return flag;
 }
 
 Framework::~Framework()

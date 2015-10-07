@@ -2,34 +2,35 @@
 #include "PriorityQ.h"
 
 PriorityQ::PriorityQ(int n)
+	: len(n)
 {
-	key = new int[n];
-	idx = new int[n];
-	min_heap = new int[n];
-	max_heap = new int[n];
-	min_heap_idx = new int[n];
-	max_heap_idx = new int[n];
+	min_task_heap = new (Task *)[n];
+	max_task_heap = new (Task *)[n];
 }
 
-PriorityQ::~PriorityQ()
-{
-	delete[] key;
-	delete[] idx;
-	delete[] min_heap;
-	delete[] max_heap;
-	delete[] min_heap_idx;
-	delete[] max_heap_idx;
-}
-
-void PriorityQ::Exchange (int *x, int *y)
+void PriorityQ::exchange (Task **x, Task **y)
 {
 	*x = *x ^ *y;
 	*y = *x ^ *y;
 	*x = *x ^ *y;
 }
 
-/* the min heap part */
-void PriorityQ::Min_Heapify (int i)
+/*
+ * the min heap part
+ */
+void PriorityQ::min_heap_init()
+{
+	min_heap_size = 0;
+}
+
+void PriorityQ::build_min_heap(Task *task_chain)
+{
+	for (int i = 0; i < n; i++) {
+		min_heap_insert(&task_chain[i]);
+	}
+}
+
+void PriorityQ::min_heapify (int i)
 {
 	int l, r, smallest;
 
@@ -39,66 +40,96 @@ void PriorityQ::Min_Heapify (int i)
 		if (smallest != -1)
 		{
 			Exchange (&min_heap[i], &min_heap[smallest]);
-			Exchange (&min_heap_idx[i], &min_heap_idx[smallest]);
 			i = smallest;
 		}
 
 		l = LEFT(i);
 		r = RIGHT(i);
 		smallest = i;
-		if (l <= min_heap_size && min_heap[l] < min_heap[smallest])
+		if (l <= min_heap_size &&
+			min_heap[l]->lop < min_heap[smallest]->lop)
 			smallest = l;
-		if (r <= min_heap_size && min_heap[r] < min_heap[smallest])
+		if (r <= min_heap_size &&
+			min_heap[r]->lop < min_heap[smallest]->lop)
 			smallest = r;
 	}while (smallest != i);
 }
 
-int PriorityQ::Min_Heap_Extract_Top ()
+Task *PriorityQ::min_heap_extract_top()
 {
-/*	if (heap_size < 1)
-	{
+	if (min_heap_size < 1) {
 		cout << "heap underflow" << endl;
 		exit (1);
-	} */
+	}
 
-	int min = min_heap[1];
+	Task *min = min_heap[1];
 
 	min_heap[1] = min_heap[min_heap_size];
-	min_heap_idx[1] = min_heap_idx[min_heap_size];
 	min_heap_size--;
-	Min_Heapify (1);
+	min_heapify(1);
 
 	return min;
 }
 
-void PriorityQ::Min_Heap_Insert (int key, int idx)
+void PriorityQ::min_heap_insert(Task *key)
 {
 	min_heap_size++;
 	min_heap[min_heap_size] = key;
-	min_heap_idx[min_heap_size] = idx;
 
 	int i = min_heap_size;
-	while (i > 1 && min_heap[i] < min_heap[PARENT(i)])
-	{
-		Exchange (&min_heap[i], &min_heap[PARENT(i)]);
-		Exchange (&min_heap_idx[i], &min_heap_idx[PARENT(i)]);
+	
+	while (i > 1 && min_heap[i]->lop < min_heap[PARENT(i)]->lop) {
+		exchange(&min_heap[i], &min_heap[PARENT(i)]);
 		i = PARENT(i);
 	}
 }
 
-int PriorityQ::Heap_Min_Key()
+void PriorityQ::min_heap_replace_with_key(int idx, Task *key)
 {
-	return min_heap[1];
+	min_heap_delete_key(idx);
+	min_heap_insert(key);
 }
 
-int PriorityQ::Heap_Min_Key_Id()
+void PriorityQ::min_heap_delete_key(int idx)
 {
-	return min_heap_idx[1];
+	int i = idx;
+	
+	min_task_heap[i]->lop = NEG_INFINITY;
+	
+	while (i > 1) {
+		exchange(&min_heap[i], &min_heap[PARENT(i)]);
+		i = PARENT(i);
+	}
+
+	min_heap_extract_top();
 }
 
+Task *PriorityQ::heap_min_key()
+{
+	return min_task_heap[1];
+}
 
-/* the max heap part */
-void PriorityQ::Max_Heapify (int i)
+int PriorityQ::heap_min_key_id()
+{
+	return min_task_heap[1]->id;
+}
+
+/*
+ * the max heap part
+ */
+void PriorityQ::min_heap_init()
+{
+	min_heap_size = 0;
+}
+
+void PriorityQ::build_max_heap(Task *task_chain)
+{
+	for (int i = 0; i < n; i++) {
+		max_heap_insert(&task_chain[i]);
+	}
+}
+
+void PriorityQ::max_heapify (int i)
 {
 	int l, r, largest;
 
@@ -108,141 +139,80 @@ void PriorityQ::Max_Heapify (int i)
 	{
 		if (largest != -1)
 		{
-			Exchange(&max_heap[i], &max_heap[largest]);
-			Exchange(&max_heap_idx[i], &max_heap_idx[largest]);
+			exchange(&max_heap[i], &max_heap[largest]);
 			i = largest;
 		}
 
 		l = LEFT(i);
 		r = RIGHT(i);
 		largest = i;
-		if (l <= max_heap_size && max_heap[l] > max_heap[largest])
+		if (l <= max_heap_size &&
+			max_task_heap[l]->lop > max_task_heap[largest]->lop)
 			largest = l;
-		if (r <= max_heap_size && max_heap[r] > max_heap[largest])
+		if (r <= max_heap_size &&
+			max_task_heap[r]->lop > max_task_heap[largest]->lop)
 			largest = r;
 	} while (largest != i);
 }
 
-int PriorityQ::Max_Heap_Extract_Top ()
+Task *PriorityQ::max_heap_extract_top()
 {
-	int max = max_heap[1];
+	Task *max = max_heap[1];
 
 	max_heap[1] = max_heap[max_heap_size];
 	max_heap_idx[1] = max_heap_idx[max_heap_size];
 	max_heap_size--;
-	Max_Heapify (1);
+	max_heapify(1);
 
 	return max;
 }
 
-void PriorityQ::Max_Heap_Insert (int key, int idx)
+void PriorityQ::max_heap_insert(Task *key)
 {
 	max_heap_size++;
 	max_heap[max_heap_size] = key;
-	max_heap_idx[max_heap_size] = idx;
 
 	int i = max_heap_size;
-	while (i > 1 && max_heap[i] > max_heap[PARENT(i)])
-	{
-		Exchange (&max_heap[i], &max_heap[PARENT(i)]);
-		Exchange (&max_heap_idx[i], &max_heap_idx[PARENT(i)]);
+	
+	while (i > 1 && max_task_heap[i]->lop > max_task_heap[PARENT(i)]->lop) {
+		exchange(&max_task_heap[i], &max_task_heap[PARENT(i)]);
 		i = PARENT(i);
 	}
 }
 
-int PriorityQ::Heap_Max_Key()
+Task *PriorityQ::heap_max_key()
 {
 	return max_heap[1];
 }
 
-int PriorityQ::Heap_Max_Key_Id()
+int PriorityQ::heap_max_key_id()
 {
-	return max_heap_idx[1];
+	return max_heap_idx[1]->id;
 }
 
-
-void PriorityQ::Heap_Init (int k)
+void PriorityQ::max_heap_replace_with_key(int idx, Task *key)
 {
-	min_heap_size = max_heap_size = 0;
-//	Max_Heap_Insert(NEG_INFINITY, 0);
-//	Min_Heap_Insert(POS_INFINITY, 0);
-	for (int i = 1; i <= k; i++) {
-		Max_Heap_Insert(key[i], idx[i]);
-		Min_Heap_Insert(key[i], idx[i]);
-	}
+	max_heap_delete_key(idx);
+	max_heap_insert(key);
 }
 
-void PriorityQ::read(int n)
+void PriorityQ::max_heap_delete_key(int idx)
 {
-	for (int i = 1; i <= n; i++) {
-		cin >> key[i];
-		idx[i] = i;
-	}
-}
-
-void PriorityQ::Slide_Window(int n, int k)
-{
-	int max_heap_key, max_heap_key_id;
-	int min_heap_key, min_heap_key_id;
-
-	min_heap_key = Heap_Min_Key();
-	cout << min_heap_key;
+	int i = idx;
 	
-	for (int i = k + 1; i <= n; i++) {
-		cout << " ";
-		min_heap_key_id = Heap_Min_Key_Id();
-		while (min_heap_key_id < (i - k + 1)) {
-			//	max_heap_key = Heap_Max_Key();
-			min_heap_key = Min_Heap_Extract_Top();
-			if (min_heap_size == 1) // empty
-				break;
-			min_heap_key_id = Heap_Min_Key_Id();
-		}
-		Min_Heap_Insert(key[i], idx[i]);
-		min_heap_key = Heap_Min_Key();
-		cout << min_heap_key;
-	}
-	cout << "\n";
-
-	max_heap_key = Heap_Max_Key();
-	cout << max_heap_key;
+	max_task_heap[i]->lop = POS_INFINITY;
 	
-	for (int i = k + 1; i <= n; i++) {
-		cout << " ";
-		max_heap_key_id = Heap_Max_Key_Id();
-		while (max_heap_key_id < (i - k + 1)) {
-			//	max_heap_key = Heap_Max_Key();
-			max_heap_key = Max_Heap_Extract_Top();
-			if (max_heap_size == 1) // empty
-				break;
-			max_heap_key_id = Heap_Max_Key_Id();
-		}
-		Max_Heap_Insert(key[i], idx[i]);
-		max_heap_key = Heap_Max_Key();
-		cout << max_heap_key;
+	while (i > 1) {
+		exchange(&max_heap[i], &max_heap[PARENT(i)]);
+		i = PARENT(i);
 	}
-	cout << "\n";
+
+	max_heap_extract_top();
 }
 
-int main (int argc, char *argv[])
+PriorityQ::~PriorityQ()
 {
-	int n, k;
-	
-	while (cin >> n >> k) {
-		PriorityQ p(n);
-		
-		p.read(n);
-		p.Heap_Init(k);
-		/*
-		for (int i = 0; i < k; i++) {
-			
-		}
-		for (int i = 0; i <= (n - k); i++) {
-			
-		}
-		*/
-		p.Slide_Window(n, k);
-	}
-
-	return 0;
+	delete[] min_task_heap;
+	delete[] max_task_heap;
 }
+
