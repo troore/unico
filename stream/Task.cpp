@@ -4,6 +4,15 @@ void Task::Task()
 {
 }
 
+void Task::Task(const Task &T)
+{
+	id = T.id;
+	type = T.type;
+	latency = T.latency;
+	power = T.power;
+	lop = T.lop;
+}
+
 void Task::Task(int x, int t)
 	: id(x), type(t)
 {

@@ -1,8 +1,8 @@
 
 #include "DisjointSet.h"
 
-DisjointSet::DisjointSet(int n, Task *pt)
-	: num_elems(n), task_chain(pt)
+DisjointSet::DisjointSet(int n)
+	: num_elems(n)
 {
 	p = new int[n];
 	set_latency = new double[n];
@@ -10,11 +10,18 @@ DisjointSet::DisjointSet(int n, Task *pt)
 	set_lop = new double[n];
 }
 
-void DisjointSet::build_disjset()
+void DisjointSet::build_disjset(Task *task_chain)
 {
+	task_elems = new (Task *)[num_elems];
 	for (int i = 0; i < num_elems; i++) {
+		task_elems[i] = &(task_chain[i]);
 		make_set(i);
 	}
+}
+
+void DisjointSet::destroy_disjset()
+{
+	delete[] task_elems;
 }
 
 void DisjointSet::make_set(int x)
@@ -200,6 +207,17 @@ double DisjointSet::system_power_consumption()
 	}
 
 	return res;
+}
+
+void DisjointSet::update_elem(int x, Task *t)
+{
+	int set_id = find_set(x);
+	double old_set_latency = set_latency[set_id];
+
+	set_latency[set_id] = set_latency[set_id] - t->latency + task_elems[x]->latency;
+	set_power[set_id] = (old_set_latency * set_power[set_id] - t->latency * t->power
+						 + task_elems[x]->latency * task_elems[x]->power) / set_latency[set_id];
+	set_lop[set_id] = set_latency[set_id] / set_power[set_id];
 }
 
 DisjointSet::~DisjointSet()

@@ -18,6 +18,7 @@ class Task {
 	double lop;
 public:
 	Task();
+	Task(const Task &T); // copy constructor
 	~Task();
 	void set_latency(double l);
 	void set_power(double p);

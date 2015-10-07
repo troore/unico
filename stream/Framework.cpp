@@ -299,12 +299,14 @@ bool Framework::DVFS_async(double stg_len_limit)
 			else {
 				// do DVFS
 				//	lop_task_new = l_task_new / p_task_new;
+				Task t = *pt;
+				
 				pt->set_latency(l_task_new);
 				pt->set_power(p_task_new);
 				pt->set_lop();
 				priq->min_heap_extract_top();
 				priq->min_heap_insert_key(pt);
-				disjset->update_elem(tid);
+				disjset->update_elem(tid, &t);
 				
 				flag = true;
 				break;
