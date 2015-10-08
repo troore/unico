@@ -19,6 +19,7 @@ class Task {
 public:
 	Task();
 	Task(const Task &T); // copy constructor
+	Task &operator= (const Task &);
 	~Task();
 	void set_latency(double l);
 	void set_power(double p);

@@ -10,6 +10,30 @@ DisjointSet::DisjointSet(int n)
 	set_lop = new double[n];
 }
 
+DisjointSet::DisjointSet(const DisjointSet &Set)
+{
+	for (int i = 0; i < num_elems; i++) {
+		task_elems[i] = Set.task_elem[i];
+		p[i] = Set.p[i];
+		set_size[i] = Set.set_size[i];
+		set_latency[i] = Set.set_latency[i];
+		set_power[i] = Set.set_power[i];
+		set_lop[i] = Set.set_lop[i];
+	}
+}
+
+DisjointSet &DisjointSet::operator= (const DisjointSet &Set)
+{
+	for (int i = 0; i < num_elems; i++) {
+		task_elems[i] = Set.task_elem[i];
+		p[i] = Set.p[i];
+		set_size[i] = Set.set_size[i];
+		set_latency[i] = Set.set_latency[i];
+		set_power[i] = Set.set_power[i];
+		set_lop[i] = Set.set_lop[i];
+	}
+}
+
 void DisjointSet::build_disjset(Task *task_chain)
 {
 	task_elems = new (Task *)[num_elems];

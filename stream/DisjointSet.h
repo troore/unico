@@ -13,6 +13,8 @@ class DisjointSet {
 	double *set_lop;
 public:
 	DisjointSet(int n);
+	DisjointSet(const DisjointSet &Set); // copy constructor
+	DisjointSet &operator= (const DisjointSet &Set);
 	~DisjointSet();
 	void make_set(int x, double lop);
 	int find_set(int x);

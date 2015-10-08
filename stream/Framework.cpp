@@ -195,17 +195,14 @@ void Framework::set_default_bounds()
 void Framework::iterate()
 {
 	bool accepted = false;
-	double stg_len, next_stg_len, throughput;
+	double latency, stg_len, throughput;
 	double system_power;
-	int i;
-	i = num_tasks_in_stream;
 
 	while (!accepted) {
+		latency = get_pipeline_latency();
 		stg_len = get_stage_length();
-		next_stg_len = get_next_stage_length();
 		throughput = 1.0 / stg_len;
-		if (stg_len >= next_stg_len || i <= 0) {
-			recover_stream();
+		while (latency > latency_constraint) {
 			insert_bubble();
 		}
 		if (throughput > throughput_upper_bound) {
@@ -213,19 +210,17 @@ void Framework::iterate()
 			accepted = true;
 		}
 		else {
+			DVFS_backup();
 			system_power = get_system_power_consumption();
 			while (system_power > system_power_cap) {
-				DVFS();
-				stg_len = get_stage_length();
-				if (stg_len >= next_stg_len || i <= 0)
+				if (!DVFS_async()) {
+					DVFS_cancelling();
 					break;
+				}
+				system_power = get_system_power_consumption();
 			}
 			if (system_power <= system_power_cap) {
 				accepted = true;
-			}
-			else {
-				dinic->cst_graph(task_chain);
-				dinic->max_flow(S, T, &cnts, &cntt);
 			}
 		}
 	}
@@ -241,35 +236,33 @@ double Framework::get_system_power_consumption()
 	return disjset->system_power_consumption();
 }
 
-void Framework::recover_stream()
+void Framework::DVFS_backup()
 {
-	priq = priq_bak;
-	disjset = disjset_bak;
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		task_chain_bak[i] = task_chain[i];
+	}
+	*priq_bak = *priq;
+	*disjset_bak = *disjset;
 }
 
-double Framework::insert_bubble()
+void Framework::DVFS_cancelling()
+{
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		task_chain[i] = task_chain_bak[i];
+	}
+	*priq = *priq_bak;
+	*disjset = *disjset_bak;
+}
+
+void Framework::insert_bubble()
 {
 	// bubble insertion
 	int core_id, neb_core_id;
-	double next_stg_len_bound;
 
 	core_id = disjset->min_set_size_id();
 	neb_core_id = disjset->neb_set_id(core_id);
 
 	disjset->union_set(core_id, neb_core_id);
-
-	disjset_bak = disjset;
-	core_id = disjset_bak->min_latency_core_id();
-	next_stg_len_bound = disjset_bak->min_set_latency();
-	neb_core_id = disjset_bak->neb_core_id(core_id);
-
-	disjset_bak->union_set(core_id, neb_core_id);
-	
-	// reserve mapping and scheduling results
-	// before DVFS and remapping and rescheduling
-	disjset_bak = disjset;
-
-	return next_stg_len_bound;
 }
 
 bool Framework::DVFS_sync()

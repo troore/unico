@@ -15,7 +15,7 @@ class Framework {
 	int num_tasks_in_stream;
 	double bdw_cpu_fpga, bdw_fpga_cpu;
 
-	Task *task_chain;
+	Task *task_chain_bak, *task_chain;
 	// in bytes
 	int *transfer_data_size;
 
@@ -59,8 +59,11 @@ public:
 	void init_task_chain();
 	void set_default_bounds();
 	void iterate();
+	void insert_bubble();
+	void DVFS_backup();
 	bool DVFS_sync();
 	bool DVFS_async();
+	void DVFS_cancelling();
 };
 
 #endif

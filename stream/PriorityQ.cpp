@@ -8,6 +8,30 @@ PriorityQ::PriorityQ(int n)
 	max_task_heap = new (Task *)[n];
 }
 
+PriorityQ::PriorityQ(const PriorityQ &Q)
+{
+	min_heap_size = Q.min_heap_size;
+	max_heap_size = Q.max_heap_size;
+	for (int i = 0; i < min_heap_size; i++) {
+		min_task_heap[i] = Q.min_task_heap[i];
+	}
+	for (int i = 0; i < max_heap_size; i++) {
+		max_task_heap[i] = Q.max_task_heap[i];
+	}
+}
+
+PriorityQ &PriorityQ::operator= (const PriorityQ &Q)
+{
+	min_heap_size = Q.min_heap_size;
+	max_heap_size = Q.max_heap_size;
+	for (int i = 0; i < min_heap_size; i++) {
+		min_task_heap[i] = Q.min_task_heap[i];
+	}
+	for (int i = 0; i < max_heap_size; i++) {
+		max_task_heap[i] = Q.max_task_heap[i];
+	}
+}
+
 void PriorityQ::exchange (Task **x, Task **y)
 {
 	*x = *x ^ *y;

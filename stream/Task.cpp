@@ -1,10 +1,10 @@
 #include "Task.h"
 
-void Task::Task()
+Task::Task()
 {
 }
 
-void Task::Task(const Task &T)
+Task::Task(const Task &T)
 {
 	id = T.id;
 	type = T.type;
@@ -13,7 +13,16 @@ void Task::Task(const Task &T)
 	lop = T.lop;
 }
 
-void Task::Task(int x, int t)
+Task &Task::operator= (const Task &T)
+{
+	id = T.id;
+	type = T.type;
+	latency = T.latency;
+	power = T.power;
+	lop = T.lop;
+}
+
+Task::Task(int x, int t)
 	: id(x), type(t)
 {
 }
@@ -58,6 +67,6 @@ double Tasks::get_lop()
 	return lop;
 }
 
-void Task::~Task()
+Task::~Task()
 {
 }

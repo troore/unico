@@ -17,10 +17,14 @@ class PriorityQ {
 	Task **min_task_heap, **max_task_heap;
 public:
 	PriorityQ(int n);
+	PriorityQ(const PriorityQ &Q); // copy constructor
 	~PriorityQ();
-	void read(int n);
+
+	PriorityQ &operator= (const PriorityQ &);
+	
 	void exchange(Task *x, Task *y);
 
+	void build_min_heap(Task *);
 	void max_heap_init();
 	void max_heapify(int i);
 	Task *max_heap_extract_top();
@@ -29,7 +33,8 @@ public:
 	int heap_max_key_Id();
 	void min_heap_replace_with_key(int idx, Task *key);
 	void min_heap_delete_key(int idx);
-	
+
+	void build_min_heap(Task *);
 	void min_heap_init();
 	void min_heapify(int i);
 	Task *min_heap_extract_top();
