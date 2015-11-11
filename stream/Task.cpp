@@ -6,35 +6,33 @@ Task::Task()
 
 Task::Task(const Task &T)
 {
-	id = T.id;
 	type = T.type;
-	latency = T.latency;
+	time = T.time;
 	power = T.power;
-	lop = T.lop;
+	freq = T.freq;
+	next = T.next;
 }
 
 Task &Task::operator= (const Task &T)
 {
-	id = T.id;
 	type = T.type;
-	latency = T.latency;
+	time = T.time;
 	power = T.power;
-	lop = T.lop;
+	freq = T.freq;
+	next = T.next;
+
+	return *this;
 }
 
-Task::Task(int x, int t)
-	: id(x), type(t)
+
+void Task::set_type(int t)
 {
+	type = t;
 }
 
-void Task::set_id(int x)
+void Task::set_time(double t)
 {
-	id = x;
-}
-
-void Task::set_latency(double l)
-{
-	latency = l;
+	time = t;
 }
 
 void Task::set_power(double p)
@@ -42,19 +40,24 @@ void Task::set_power(double p)
 	power = p;
 }
 
-void Task::set_lop()
+void Task::set_sno(int no)
 {
-	lop = latency / power;
+	sno = no;
 }
 
-int Task::get_id()
+void Task::set_freq(double f)
 {
-	return id;
+	freq = f;
 }
 
-double Task::get_latency()
+int Task::get_type()
 {
-	return latency;
+	return type;
+}
+
+double Task::get_time()
+{
+	return time;
 }
 
 double Task::get_power()
@@ -62,9 +65,14 @@ double Task::get_power()
 	return power;
 }
 
-double Tasks::get_lop()
+int Task::get_sno()
 {
-	return lop;
+	return sno;
+}
+
+double Task::get_freq()
+{
+	return freq;
 }
 
 Task::~Task()

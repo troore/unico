@@ -1,14 +1,19 @@
 
 #include <iostream>
 #include <fstream>
-#include <stack>
-#include <cmath>
+#include <cstdlib>
+
 #include "Framework.h"
+#include "Task.h"
+#include "Bucket.h"
 
 Framework::Framework()
 {	
-	latency_lower_bound = 0;
-	throughput_upper_bound = 0;
+}
+
+Framework::Framework(double pc, double lc)
+	: system_power_cap(pc), latency_constraint(lc)
+{
 }
 
 void Framework::read_profile_config()
@@ -25,9 +30,6 @@ void Framework::read_profile_config()
 	// Number of cores on CPU
 	fin >> num_cores_on_cpu;
 
-	// Bandwidth
-	fin >> bdw_cpu_fpga >> bdw_fpga_cpu;
-
 	// Number of frequencies on each CPU core
 	fin >> num_freqs;
 
@@ -43,290 +45,147 @@ void Framework::read_profile_config()
 	 * latency and power profiling information on CPU under
 	 * highest frequency
 	 */ 
-	cpu_latency_under_highest_freq = new double[num_tasks_in_stream];
-	cpu_power_under_highest_freq = new double[num_tasks_in_stream];
+	cpu_time_highest_freq = new double[num_tasks_in_stream];
+	cpu_power_highest_freq = new double[num_tasks_in_stream];
 
 	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> cpu_latency_under_highest_freq[i];
+		fin >> cpu_time_highest_freq[i];
 	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> cpu_power_under_highest_freq[i];
+		fin >> cpu_power_highest_freq[i];
 
 	/*
-	 * latency and power profiling information on FPGA under
-	 * highest resource usage
+	 * latency and power profiling information on FPGA
 	 */ 
-	fpga_latency_under_highest_resusg = new double[num_tasks_in_stream];
-	fpga_power_under_highest_resusg = new double[num_tasks_in_stream];
+	fpga_time = new double[num_tasks_in_stream];
+	fpga_power = new double[num_tasks_in_stream];
 	
 	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> fpga_latency_under_highest_resusg[i];
+		fin >> fpga_time[i];
 	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> fpga_power_under_highest_resusg[i];
+		fin >> fpga_power[i];
 
+	// bandwidth (MBps)
+	bandwidth = 800;
+
+	// vector of data size per frame between tasks (x4bytes, int)
 	transfer_data_size = new int[num_tasks_in_stream - 1];
 	for (int i = 0; i < (num_tasks_in_stream - 1); i++)
-		fin >> fpga_power_under_highest_resusg[i];
-
-	if (fin.eof())
-		std::cout << "[EoF reached]\n";
-	else
-		std::cout << "[error reading]\n";
+		fin >> transfer_data_size[i];
 
 	fin.close();
 }
 
-int Framework::init_predict_model()
+void Framework::output_profile_config()
 {
-	// profiling results of the first task
-	double p = cpu_power_under_highest_freq[0];
-	double l = cpu_latency_under_highest_freq[0];
-	double f = cpu_freq_scale_space[num_freqs - 1];
-	
-	lambda = p / pow(f, 3.0);
-	mu = l * f;
+	std::cout << num_cores_on_cpu << std::endl;
+	std::cout << num_freqs << std::endl;
+	for (int i = 0; i < num_freqs; i++)
+		std::cout << cpu_freq_scale_space[i] << " ";
+	std::cout << std::endl;
+	std::cout << num_tasks_in_stream << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++)
+		std::cout << cpu_time_highest_freq[i] << " ";
+	std::cout << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++)
+		std::cout << cpu_power_highest_freq[i] << " ";
+	std::cout << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++)
+		std::cout << fpga_time[i] << " ";
+	std::cout << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++)
+		std::cout << fpga_power[i] << " ";
+	std::cout << std::endl;
+	for (int i = 0; i < (num_tasks_in_stream - 1); i++)
+		std::cout << transfer_data_size[i] << " ";
+	std::cout << std::endl;
 
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		int j = num_freqs - 1;
-		/*
-		 * tentatively try a lower frequency
-		 */
-		while (p >= cpu_power_cap && j > 0) {
-			j = j - 1;
-			f = cpu_freq_scale_space[j];
-			p = lambda * pow(f, 3.0);
-		}
-		if (j <= 0)
-			return 1;
-		else {
-			cpu_power_under_highest_freq[i] = p;
-			cpu_latency_under_highest_freq[i] = mu * f;
-		}
-	}
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		l = cpu_latency_under_highest_freq[i];
-		if (l >= latency_constraint)
-			return 2;
-	}
-
-	return 0;
 }
 
-void Framework::init_task_chain()
+void Framework::clear_profile_config()
 {
-	task_chain = new Task[num_tasks_in_stream];
-
-	/*
-	 * Initiate the task chain.
-	 */
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		double l, p;
-		
-		task_chain[i]->set_id(i, v_map_result[i]);
-		if (0 == v_map_result[i]) {
-			// CPU
-			l = cpu_latency_under_highest_freq[i];
-			p = cpu_power_under_highest_freq[i];
-			task_chain[i]->set_latency(l);
-			task_chain[i]->set_power(p);
-		}
-		else {
-			// FPGA
-			l = fpga_latency_under_highest_freq[i];
-			task_chain[i]->set_latency(l);
-			/*
-			  * Use lowest CPU frequency when there is a FPGA task.
-			  */
-			p = fpga_power_under_highest_freq[i] +
-				lambda * pow(cpu_freq_scale_space[0], 3.0);
-			task_chain[i]->set_power(p);
-		}
-		task_chain[i]->set_lop();
-	}
-
-	/*
-	 * Initiate disjoint set.
-	 */
-	disjset = new DisjointSet(num_tasks_in_stream);
-	/*
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		disjset->make_set(i);
-	}
-	*/
-	disjset->build_disjset();
-
-	/*
-	 * Initiate priority queue.
-	 */
-	priq->Build_Min_Heap(task_chain);
-}
-
-void Framework::set_default_bounds()
-{
-	double *aa, *bb, *ws, *wt;
-
-	int n = num_tasks_in_stream;
-	int m = n - 1;
-
-	aa = new double[m];
-	bb = new double[m];
-	ws = new double[m];
-	wt = new double[m];
-
-	for (int i = 0; i < m; i++) {
-		aa[i] = i;
-		bb[i] = i + 1;
-		ws[i] = transfer_data_size[i] / bdw_cpu_fpga;
-		wt[i] = transfer_data_size[i] / bdw_fpga_cpu;
-	}
-
-	dinic = new Dinic(n, m);
-	
-	dinic->cst_graph(cpu_latency_under_highest_freq, fpga_latency_under_highest_freq,
-					aa, bb, ws, wt, n, m);
-	latency_lower_bound = dinic->max_flow(S, T);
-	throughput_upper_bound = (1.0 / latench_lower_bound);
-
-	delete[] aa;
-	delete[] bb;
-	delete[] ws;
-	delete[] wt;
+	if (cpu_freq_scale_space)
+		delete [] cpu_freq_scale_space;
+	if (cpu_time_highest_freq)
+		delete [] cpu_time_highest_freq;
+	if (cpu_power_highest_freq)
+		delete [] cpu_power_highest_freq;
+	if (fpga_time)
+		delete [] fpga_time;
+	if (fpga_power)
+		delete [] fpga_power;
+	if (transfer_data_size)
+		delete [] transfer_data_size;
 }
 
 void Framework::iterate()
 {
-	bool accepted = false;
-	double latency, stg_len, throughput;
-	double system_power;
+	// cut result, 0: CPU, 1: FPGA
+	bool *ST =  new bool[num_tasks_in_stream];
 
-	while (!accepted) {
-		latency = get_pipeline_latency();
-		stg_len = get_stage_length();
-		throughput = 1.0 / stg_len;
-		while (latency > latency_constraint) {
-			insert_bubble();
-		}
-		if (throughput > throughput_upper_bound) {
-			throughput = throughput_upper_bound;
-			accepted = true;
+	task_chain = new Task[num_tasks_in_stream];
+	bucket = new Bucket;
+
+	/*
+	 * ST should be filled by a max-flow min-cut algorithm,
+	 * but we now do it manually when the number of tasks is
+	 * small.
+	 */
+	ST[0] = 1;
+	ST[1] = 0;
+	ST[2] = 0;
+
+	init_task_chain(ST);
+	
+	latency_lower_bound = bucket->get_pipeline_latency();
+	std::cout << latency_lower_bound << std::endl;
+	if (latency_lower_bound > latency_constraint) {
+		std::cout << "Latency is too rigid!" << std::endl;
+		std::cout << "Exiting...\n";
+		exit(1);
+	}
+	throughput_upper_bound = 1.0 / latency_lower_bound;
+
+	power_lower_bound = 0.0;
+	for (int i = 0; i < num_tasks_in_stream; i++)
+		power_lower_bound = power_lower_bound + fpga_power[i];
+	std::cout << power_lower_bound << std::endl;
+	if (power_lower_bound > system_power_cap) {
+		std::cout << "Power cap is too rigid!" << std::endl;
+		std::cout << "Exiting...\n";
+		exit(1);
+	}
+
+	delete [] ST;
+}
+
+void Framework::init_task_chain(bool *ST)
+{
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		int id = num_tasks_in_stream - 1 - i;
+		
+		task_chain[i].set_type(ST[i]);
+		task_chain[i].set_sno(num_tasks_in_stream - 1 - i);
+		task_chain[i].next = NULL;
+		if (ST[i] == 0) {
+			// CPU
+			task_chain[i].set_time(cpu_time_highest_freq[i]);
+			task_chain[i].set_power(cpu_power_highest_freq[i]);
+			task_chain[i].set_freq(cpu_freq_scale_space[num_freqs - 1]);
 		}
 		else {
-			DVFS_backup();
-			system_power = get_system_power_consumption();
-			while (system_power > system_power_cap) {
-				if (!DVFS_async()) {
-					DVFS_cancelling();
-					break;
-				}
-				system_power = get_system_power_consumption();
-			}
-			if (system_power <= system_power_cap) {
-				accepted = true;
-			}
+			// FPGA
+			task_chain[i].set_time(fpga_time[i]);
+			task_chain[i].set_power(fpga_power[i]);
+			task_chain[i].set_freq(0.0);
 		}
+		bucket->insert(id, &task_chain[i]);
 	}
-}
-
-double Framework::get_stage_length()
-{
-	return disjset->max_set_size();
-}
-
-double Framework::get_system_power_consumption()
-{
-	return disjset->system_power_consumption();
-}
-
-void Framework::DVFS_backup()
-{
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		task_chain_bak[i] = task_chain[i];
-	}
-	*priq_bak = *priq;
-	*disjset_bak = *disjset;
-}
-
-void Framework::DVFS_cancelling()
-{
-	for (int i = 0; i < num_tasks_in_stream; i++) {
-		task_chain[i] = task_chain_bak[i];
-	}
-	*priq = *priq_bak;
-	*disjset = *disjset_bak;
-}
-
-void Framework::insert_bubble()
-{
-	// bubble insertion
-	int core_id, neb_core_id;
-
-	core_id = disjset->min_set_size_id();
-	neb_core_id = disjset->neb_set_id(core_id);
-
-	disjset->union_set(core_id, neb_core_id);
-}
-
-bool Framework::DVFS_sync()
-{}
-
-bool Framework::DVFS_async(double stg_len_limit)
-{
-	std::stack<Task *> buffer;
-	Task *pt;
-	int tid, fid, fid_new;
-	double l_task, l_set, l_set_new;
-	bool flag;
-
-	flag = false;
-	while (pt = priq->Heap_Min_Key()) {
-		id = pt->get_id();
-		fid = pt->get_freq_id();
-		if (fid + 1 < num_freqs) {
-			// if there is frequency scaling space, try to do it
-			fid_new = fid + 1;
-			l_set = disjset->get_min_set_latency(id);
-			l_task = pt->get_latency();
-			l_tmp = l - l_task + lambda * pow(fid_new, 3.0);
-			if (l_tmp > stg_len_limit) {
-				buffer.push(priq->min_heap_extract_top());
-			}
-			else {
-				// do DVFS
-				//	lop_task_new = l_task_new / p_task_new;
-				Task t = *pt;
-				
-				pt->set_latency(l_task_new);
-				pt->set_power(p_task_new);
-				pt->set_lop();
-				priq->min_heap_extract_top();
-				priq->min_heap_insert_key(pt);
-				disjset->update_elem(tid, &t);
-				
-				flag = true;
-				break;
-			}
-		}
-	}
-
-	while (!buffer.empty()) {
-		pt = buffer.pop();
-		priq->Min_Heap_Insert(pt);
-	}
-
-	return flag;
 }
 
 Framework::~Framework()
 {
-	delete[] cpu_freq_scale_space;
-	delete[] cpu_latency_under_highest_freq;
-	delete[] cpu_power_under_highest_freq;
-	delete[] fpga_latency_under_highest_resusg;
-	delete[] fpga_power_under_highest_resusg;
-	delete[] transfer_data_size;
-
 	if (task_chain)
-		delete[] task_chain;
-
-	if (dinic)
-		delete dinic;
+		delete [] task_chain;
+	if (bucket)
+		delete bucket;
 }

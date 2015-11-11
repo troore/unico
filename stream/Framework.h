@@ -1,69 +1,57 @@
 #ifndef __FRAMEWORK_H_
 #define __FRAMEWORK_H_
 
-#include "PriorityQ.h"
-#include "Dinic.h"
-#include "DisjointSet.h"
 #include "Task.h"
+#include "Bucket.h"
+
+#define MAX_TASK_NUM 10
 
 class Framework {
+private:
 	double system_power_cap;
-	double cpu_power_cap;
-	double fpga_power_cap;
 	double latency_constraint;
+	// number of cores
 	int num_cores_on_cpu;
-	int num_tasks_in_stream;
-	double bdw_cpu_fpga, bdw_fpga_cpu;
-
-	Task *task_chain_bak, *task_chain;
-	// in bytes
-	int *transfer_data_size;
-
-	/*
-	 * performance and power prediction models
-	 * power = lambda*freq^3
-	 * latency = mu/freq
-	 */
-	double lambda;
-	double mu;
-
+	// number of frequencies
 	int num_freqs;
 	double *cpu_freq_scale_space;
-	// in millisecond
-	double *cpu_latency_under_highest_freq;
-	double *fpga_latency_under_highest_resusg;
-	// in watt
-	double *cpu_power_under_highest_freq;
-	double *fpga_power_under_highest_resusg;
+	// number of tasks in a stream
+	int num_tasks_in_stream;
+	// vector of task latencies on CPU with highest frequency
+	double *cpu_time_highest_freq;
+	// vector of task powers on CPU with highest frequency
+	double *cpu_power_highest_freq;
+	// vector of tasks latencies on FPGA
+	double *fpga_time;
+	// vector of task powers on FPGA
+	double *fpga_power;
+
+	double bandwidth;
+	// in bytes
+	int *transfer_data_size;
 	
 	double latency_lower_bound;
 	double throughput_upper_bound;
-
-	// cut result
-	int *S, *T;
-	/*
-	 * vector stores map result:
-	 * 0: CPU
-	 * 1: FPGA
-	 */
-	int *v_map_result;
+	double power_lower_bound;
 	
-	PriorityQ *priq_bak, *priq;
-	Dinic *dinic;
-	DisjointSet *disjset_bak, *disjset;
+	// task chain
+	Task *task_chain;
+	// bucket to simulate the pipeline
+//	Bucket<Task> *bucket;
+	Bucket *bucket;
+	
+	// output
+	double time;
+	double power;
 public:
 	Framework();
+	Framework(double pc, double lc);
 	~Framework();
 	void read_profile_config();
-	int init_predict_model();
-	void init_task_chain();
-	void set_default_bounds();
+	void output_profile_config();
+	void clear_profile_config();
+	void init_task_chain(bool *ST);
 	void iterate();
-	void insert_bubble();
-	void DVFS_backup();
-	bool DVFS_sync();
-	bool DVFS_async();
-	void DVFS_cancelling();
 };
 
 #endif

@@ -1,24 +1,26 @@
 
+#include <iostream>
 #include <cstdlib>
 #include "Framework.h"
 
 int main(int argc, char *argv[])
 {
-	Framework f;
+	double pc, lc;
+	Framework *f;
 
-	bool is_single_task_in_caps;
-
-	f.read_profile_config();
-	is_single_task_in_caps = f.init_predict_model();
-	if (is_single_tasks_in_caps != 0) {
-		if (is_single_tasks_in_caps == 1)
-			std::cout << "Power constraints are too sringent!" << std::endl;
-		else
-			std::cout << "Latency constraints are too sringent!" << std::endl;
+	if (argc != 3) {
+		std::cout << "Usage: ./stream.out power_cap latency_constraint" << std::endl;
+		exit(1);
 	}
 	
-	f.set_default_bounds();
-	f.iterate();
+	pc = atof(argv[1]);
+	lc = atof(argv[2]);
+	f = new Framework(pc, lc);
+	f->read_profile_config();
+	f->output_profile_config();
+	f->iterate();
+
+	delete f;
 	
     return 0;
 }

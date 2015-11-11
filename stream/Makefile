@@ -1,6 +1,6 @@
 TARGETS := stream.out
 
-SRCS := main.cpp Framework.cpp
+SRCS := main.cpp Framework.cpp Task.cpp Bucket.cpp
 
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 
@@ -14,4 +14,4 @@ stream.out: $(OBJS)
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
 clean:
-	rm -rf $(TARGETS) *.o
+	rm -rf *.o $(TARGETS)
