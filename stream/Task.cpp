@@ -6,24 +6,32 @@ Task::Task()
 
 Task::Task(const Task &T)
 {
+	id = T.id;
 	type = T.type;
 	time = T.time;
 	power = T.power;
-	freq = T.freq;
+	cpu_freq = T.cpu_freq;
+	cpu_freq_cursor = T.cpu_freq_cursor;
 	next = T.next;
 }
 
 Task &Task::operator= (const Task &T)
 {
+	id = T.id;
 	type = T.type;
 	time = T.time;
 	power = T.power;
-	freq = T.freq;
+	cpu_freq = T.cpu_freq;
+	cpu_freq_cursor = T.cpu_freq_cursor;
 	next = T.next;
 
 	return *this;
 }
 
+void Task::set_id(int i)
+{
+	id = i;
+}
 
 void Task::set_type(int t)
 {
@@ -45,9 +53,19 @@ void Task::set_sno(int no)
 	sno = no;
 }
 
-void Task::set_freq(double f)
+void Task::set_cpu_freq(double f)
 {
-	freq = f;
+	cpu_freq = f;
+}
+
+void Task::set_cpu_freq_cursor(int c)
+{
+	cpu_freq_cursor = c;
+}
+
+int Task::get_id()
+{
+	return id;
 }
 
 int Task::get_type()
@@ -70,9 +88,24 @@ int Task::get_sno()
 	return sno;
 }
 
-double Task::get_freq()
+double Task::get_cpu_freq()
 {
-	return freq;
+	return cpu_freq;
+}
+
+int Task::get_cpu_freq_cursor()
+{
+	return cpu_freq_cursor;
+}
+
+double Task::get_time_at_cpu_freq(double freq)
+{
+	return 0.0;
+}
+
+double Task::get_power_at_cpu_freq(double freq)
+{
+	return 0.0;
 }
 
 Task::~Task()

@@ -41,7 +41,7 @@ Bucket::Bucket()
 	}
 }
 
-void Bucket::insert(int id, Task *t)
+void Bucket::insert_task(int id, Task *t)
 {
 	Task *tmp;
 
@@ -60,27 +60,61 @@ void Bucket::insert(int id, Task *t)
 	head[id].time = head[id].time + t->get_time();
 }
 
-void Bucket::remove(int id)
+bool Bucket::insert_bubble()
 {
+	return true;
 }
 
-double Bucket::get_pipeline_latency()
+void Bucket::clear()
+{
+	for (int i = 0; i < ns; i++) {
+		head[i].time = 0.0;
+		head[i].power = 0.0;
+		head[i].ph = NULL;
+		head[i].n = 0;
+	}
+}
+
+double Bucket::get_max_stage_len()
 {
 	double max_stage_len;
-	int n;
 
 	max_stage_len = -1.0;
-	n = 0;
-	for (int i = 0; i < MAXS; i++) {
+	for (int i = 0; i < ns; i++) {
 		if (head[i].ph != NULL) {
-			n++;
 			// if the _i_th stage is not vacant
 			if (head[i].time - max_stage_len > 1e-3)
 				max_stage_len = head[i].time;
 		}
 	}
 
-	return (max_stage_len * n);
+	return max_stage_len;
+}
+
+double Bucket::get_stage_len(int sno)
+{
+	return head[sno].time;
+}
+
+double Bucket::get_pipeline_latency()
+{
+	return (get_max_stage_len() * ns);
+}
+
+double Bucket::get_pipeline_throughput()
+{
+	return 1.0 / get_max_stage_len();
+}
+
+double Bucket::get_pipeline_power()
+{
+	double power = 0.0;
+
+	for (int i = 0; i < ns; i++) {
+		power += head[i].power;
+	}
+
+	return power;
 }
 
 Bucket::~Bucket()

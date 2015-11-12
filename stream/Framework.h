@@ -31,7 +31,7 @@ private:
 	int *transfer_data_size;
 	
 	double latency_lower_bound;
-	double throughput_upper_bound;
+	double throughput_lower_bound;
 	double power_lower_bound;
 	
 	// task chain
@@ -52,6 +52,8 @@ public:
 	void clear_profile_config();
 	void init_task_chain(bool *ST);
 	void iterate();
+	bool dvfs();
+	bool power_balance(bool *ST);
 };
 
 #endif

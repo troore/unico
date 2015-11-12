@@ -20,9 +20,14 @@ public:
 	Bucket();
 //	Bucket(int no);
 	~Bucket();
-	void insert(int id, Task *t);
-	void remove(int id);
+	void insert_task(int id, Task *t);
+	bool insert_bubble();
+	void clear();
+	double get_max_stage_len();
+	double get_stage_len(int sno);
+	double get_pipeline_throughput();
 	double get_pipeline_latency();
+	double get_pipeline_power();
 };
 
 /*
