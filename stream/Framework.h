@@ -43,6 +43,9 @@ private:
 	// output
 	double time;
 	double power;
+
+	// interation result
+	bool accepted;
 public:
 	Framework();
 	Framework(double pc, double lc);
@@ -52,8 +55,10 @@ public:
 	void clear_profile_config();
 	void init_task_chain(bool *ST);
 	void iterate();
+	void iterate(int flag);
 	bool dvfs();
 	bool power_balance(bool *ST);
+	void speak();
 };
 
 #endif

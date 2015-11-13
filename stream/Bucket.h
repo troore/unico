@@ -22,6 +22,7 @@ public:
 	~Bucket();
 	void insert_task(int id, Task *t);
 	bool insert_bubble();
+	void merge(int a, int b);
 	void clear();
 	double get_max_stage_len();
 	double get_stage_len(int sno);

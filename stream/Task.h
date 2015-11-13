@@ -16,6 +16,13 @@ class Task {
 	int cpu_freq_cursor;
 	// stage ID
 	int sno;
+	/*
+	 * performance and power models
+	 * \chi: performance
+	 * \lambda: power
+	 */
+	double chi;
+	double lambda;
 public:
 	Task();
 	Task(const Task &T); // copy constructor
@@ -28,7 +35,9 @@ public:
 	void set_sno(int no);
 	void set_cpu_freq(double f);
 	void set_cpu_freq_cursor(int c);
-
+	void init_perf_model();
+	void init_power_model();
+		
 	int get_id();
 	int get_type();
 	double get_time();

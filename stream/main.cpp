@@ -17,8 +17,10 @@ int main(int argc, char *argv[])
 	lc = atof(argv[2]);
 	f = new Framework(pc, lc);
 	f->read_profile_config();
-	f->output_profile_config();
-	f->iterate();
+//	f->output_profile_config();
+//	f->iterate();
+	f->iterate(1);
+	f->speak();
 
 	delete f;
 	

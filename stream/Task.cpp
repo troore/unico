@@ -28,6 +28,16 @@ Task &Task::operator= (const Task &T)
 	return *this;
 }
 
+void Task::init_perf_model()
+{
+	chi = 5.5;
+}
+
+void Task::init_power_model()
+{
+	lambda = 1.0;
+}
+
 void Task::set_id(int i)
 {
 	id = i;

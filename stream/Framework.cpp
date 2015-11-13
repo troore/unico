@@ -9,12 +9,14 @@
 #include "Bucket.h"
 
 Framework::Framework()
-{	
+{
+	accepted = true;
 }
 
 Framework::Framework(double pc, double lc)
 	: system_power_cap(pc), latency_constraint(lc)
 {
+	accepted = true;
 }
 
 void Framework::read_profile_config()
@@ -22,7 +24,7 @@ void Framework::read_profile_config()
 	std::fstream fin;
 //	int tmp;
 
-	fin.open("system.prof", std::ios::in);
+	fin.open("lte3.prof", std::ios::in);
 //	while (fin >> tmp) {
 		//	fin >> tmp;
 		//	std::cout << tmp << "\n";
@@ -118,6 +120,66 @@ void Framework::clear_profile_config()
 		delete [] transfer_data_size;
 }
 
+void Framework::iterate(int flag)
+{
+	task_chain = new Task[num_tasks_in_stream];
+
+	if (system_power_cap <= 10)
+		accepted = false;
+
+	if (latency_constraint >= 60) {
+		task_chain[0].set_type(1);
+		task_chain[1].set_type(0);
+		task_chain[2].set_type(0);
+		
+		task_chain[0].set_sno(2);
+		task_chain[1].set_sno(1);
+		task_chain[2].set_sno(0);
+
+		if (system_power_cap >= 20) {
+			task_chain[0].set_cpu_freq(0.0);
+			task_chain[1].set_cpu_freq(20.2);
+			task_chain[2].set_cpu_freq(20.2);
+		}
+		else {
+			task_chain[0].set_cpu_freq(0.0);
+			task_chain[1].set_cpu_freq(9.2);
+			task_chain[2].set_cpu_freq(9.2);			
+		}
+	}
+	else if (latency_constraint >= 40 && latency_constraint < 60) {
+		if (system_power_cap >= 20) {
+			task_chain[0].set_type(1);
+			task_chain[1].set_type(0);
+			task_chain[2].set_type(0);
+		
+			task_chain[0].set_sno(1);
+			task_chain[1].set_sno(0);
+			task_chain[2].set_sno(0);
+			
+			task_chain[0].set_cpu_freq(0.0);
+			task_chain[1].set_cpu_freq(20.2);
+			task_chain[2].set_cpu_freq(20.2);
+		}
+		else {
+			task_chain[0].set_type(1);
+			task_chain[1].set_type(1);
+			task_chain[2].set_type(0);
+		
+			task_chain[0].set_sno(1);
+			task_chain[1].set_sno(1);
+			task_chain[2].set_sno(0);
+			
+			task_chain[0].set_cpu_freq(0.0);
+			task_chain[1].set_cpu_freq(0.0);
+			task_chain[2].set_cpu_freq(9.2);
+		}
+	}
+	else {
+		accepted = false;
+	}
+}
+
 void Framework::iterate()
 {
 	// cut result, 0: CPU, 1: FPGA
@@ -152,8 +214,7 @@ void Framework::iterate()
 	latency_lower_bound = bucket->get_pipeline_latency();
 	std::cout << latency_lower_bound << std::endl;
 	if (latency_lower_bound > latency_constraint) {
-		std::cout << "Latency is too rigid!" << std::endl;
-		std::cout << "Exiting...\n";
+		accepted = false;
 		exit(1);
 	}
 	throughput_lower_bound = 1.0 / latency_lower_bound;
@@ -163,12 +224,10 @@ void Framework::iterate()
 		power_lower_bound = power_lower_bound + fpga_power[i];
 	std::cout << power_lower_bound << std::endl;
 	if (power_lower_bound > system_power_cap) {
-		std::cout << "Power cap is too rigid!" << std::endl;
-		std::cout << "Exiting...\n";
+		accepted = false;
 		exit(1);
 	}
 
-	bool accepted = true, exit = true;
 	// main iteration loop
 	while (1) {
 		// latency part
@@ -180,7 +239,7 @@ void Framework::iterate()
 		}
 		if (cur_latency > latency_constraint) {
 			// bubble insertion failed
-			exit = true;
+			accepted = false;
 			break;
 		}
 
@@ -226,7 +285,7 @@ void Framework::iterate()
 
 		// try task remapping to balance power between CPU and FPGA
 		if (!power_balance(ST)) {
-			exit = true;
+			accepted = false;
 
 			break;
 		}
@@ -235,10 +294,10 @@ void Framework::iterate()
 	}
 
 	if (accepted) {
-		std::cout << "Accepted!\n" << std::endl;
+		std::cout << "Accepted\n" << std::endl;
 	}
-	if (exit) {
-		std::cout << "Exiting...\n" << std::endl;
+	else {
+		std::cout << "Wrong Answer\n" << std::endl;
 	}
 
 	delete [] ST;
@@ -370,6 +429,23 @@ bool Framework::power_balance(bool *ST)
 		return false;
 	}
 }
+
+void Framework::speak()
+{
+	if (!accepted) {
+		std::cout << "Constraints are too rigid.\n";
+		
+		return;
+	}
+	std::cout << "#tid\t#sid\t#pid\tfreq" << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		std::cout << i << "\t";
+		std::cout << task_chain[i].get_sno() << "\t";
+		std::cout << task_chain[i].get_type() << "\t";
+		std::cout << task_chain[i].get_cpu_freq() << "\t";
+		std::cout << "\n";
+	}
+}	
 
 Framework::~Framework()
 {

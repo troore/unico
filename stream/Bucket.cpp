@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cstdlib>
 #include "Bucket.h"
 #include "Task.h"
@@ -62,7 +63,66 @@ void Bucket::insert_task(int id, Task *t)
 
 bool Bucket::insert_bubble()
 {
+	/*
+	 * find the stage with smallest execution time,
+	 * its index is _sno_.
+	 */
+	int sno = 0;
+
+	for (int i = 1; i < ns; i++) {
+		if (head[i].time < head[sno].time)
+			sno = i;
+	}
+
+	/*
+	 * find the _sno_th neighbors, and choose one among them
+	 * with smaller stage length
+	 */
+	int sno_above_neb = -1, sno_below_neb = -1;
+	int sno_min_neb;
+
+	if ((sno - 1) >= 0)
+		sno_above_neb = sno - 1;
+	if ((sno + 1) < ns)
+		sno_below_neb = sno + 1;
+
+	if (sno_above_neb >= 0 && sno_above_neb >= 0) {
+		if (head[sno_above_neb].time < head[sno_above_neb].time)
+			sno_min_neb = sno_above_neb;
+		else
+			sno_min_neb = sno_below_neb;
+	}
+	else if (sno_above_neb >= 0)
+		sno_min_neb = sno_above_neb;
+	else if (sno_below_neb >= 0)
+		sno_min_neb = sno_below_neb;
+	else
+		return false;
+
+	// do the merge
+	merge(sno, sno_min_neb);
+
+	// squeeze vacant spages to compact pipeline
+	
 	return true;
+}
+
+void Bucket::merge(int a, int b)
+{
+	Task *p, *q;
+	
+	// guarantee that a < b
+	if (a > b) {
+		std::swap(a, b);
+	}
+	// find tail of stage _b_
+	p = head[b].ph;
+	while (p->next != NULL)
+		p = p->next;
+	// find head of stage _a_
+	q = head[a].ph;
+	head[a].ph = head[b].ph;
+	p->next = q;
 }
 
 void Bucket::clear()
