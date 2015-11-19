@@ -1,6 +1,8 @@
 #ifndef __FRAMEWORK_H_
 #define __FRAMEWORK_H_
 
+#include <vector>
+
 #include "Task.h"
 #include "Bucket.h"
 
@@ -54,11 +56,14 @@ public:
 	void output_profile_config();
 	void clear_profile_config();
 	void init_task_chain(bool *ST);
-	void iterate();
-	void iterate(int flag);
+	void heuristic();
+	void heuristic(int flag);
+	void bruteforce();
 	bool dvfs();
 	bool power_balance(bool *ST);
 	void speak();
+	void get_bit_vector(bool *v, int i, int n);
+	void DFS_freq_space(std::vector<Task *>tv, int k, int n);
 };
 
 #endif

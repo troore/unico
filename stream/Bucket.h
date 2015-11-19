@@ -24,6 +24,7 @@ public:
 	bool insert_bubble();
 	void merge(int a, int b);
 	void clear();
+	void set_ns(int n);
 	double get_max_stage_len();
 	double get_stage_len(int sno);
 	double get_pipeline_throughput();

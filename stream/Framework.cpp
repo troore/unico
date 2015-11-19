@@ -3,6 +3,8 @@
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
+#include <vector>
 
 #include "Framework.h"
 #include "Task.h"
@@ -17,6 +19,10 @@ Framework::Framework(double pc, double lc)
 	: system_power_cap(pc), latency_constraint(lc)
 {
 	accepted = true;
+	read_profile_config();
+	
+	task_chain = new Task[num_tasks_in_stream];
+	bucket = new Bucket;
 }
 
 void Framework::read_profile_config()
@@ -120,10 +126,8 @@ void Framework::clear_profile_config()
 		delete [] transfer_data_size;
 }
 
-void Framework::iterate(int flag)
+void Framework::heuristic(int flag)
 {
-	task_chain = new Task[num_tasks_in_stream];
-
 	if (system_power_cap <= 10)
 		accepted = false;
 
@@ -180,7 +184,7 @@ void Framework::iterate(int flag)
 	}
 }
 
-void Framework::iterate()
+void Framework::heuristic()
 {
 	// cut result, 0: CPU, 1: FPGA
 	bool *ST, *ST_backup;
@@ -189,9 +193,6 @@ void Framework::iterate()
 
 	ST = new bool[num_tasks_in_stream];
 	ST_backup = new bool[num_tasks_in_stream];
-	
-	task_chain = new Task[num_tasks_in_stream];
-	bucket = new Bucket;
 
 	/*
 	 * ST should be filled by a max-flow min-cut algorithm,
@@ -324,6 +325,95 @@ void Framework::init_task_chain(bool *ST)
 			task_chain[i].set_cpu_freq(0.0);
 		}
 	}
+}
+
+void Framework::get_bit_vector(bool *v, int i, int n)
+{
+	for (int k = 0; k < n; k++) {
+		v[n - k - 1] = (i & 1);
+		i >>= 1;
+	}
+}
+
+void Framework::DFS_freq_space(std::vector<Task *>tv, int k, int n)
+{
+	if (k == n)
+		return;
+	for (int i = 0; i < num_freqs; i++) {
+		tv[k]->set_cpu_freq_cursor(i);
+		DFS_freq_space(tv, k + 1, n);
+	}
+}
+
+void Framework::bruteforce()
+{
+	bool *v0 = new bool[num_tasks_in_stream - 1];
+	bool *v1 = new bool[num_tasks_in_stream];
+	
+	int bound0 = (int)pow(2.0, (num_tasks_in_stream - 1));
+	int bound1 = (int)pow(2.0, num_tasks_in_stream);
+
+	/*
+	 * The first hierarchy search
+	 */
+	for (int i = 0; i < bound0 - 1; i++) {
+		get_bit_vector(v0, i, num_tasks_in_stream - 1);
+		/*
+		 * Divide the stream into pipeline stages and 
+		 * insert the tasks of each pipeline stage into
+		 * its individual Bucket.
+		 */
+		int start_id = 0, stop_id = 0;
+		int sno = 0;
+		
+		for (int j = 1; j <= (num_tasks_in_stream - 1); j++) {
+			if (v0[j] == 1) { // a bound is encountered
+				stop_id = j - 1;
+				// insert tasks
+				for (int k = start_id; k <= stop_id; k++) {
+					bucket->insert_task(sno, &task_chain[k]);
+				}
+				start_id = stop_id + 1;
+				sno++;
+			}
+		}
+		bucket->set_ns(sno);
+
+		/*
+		 * The second hierarchy search: for each pipeline stage,
+		 * enumerate processor type for each task in this stage.
+		 */
+		for (int j = 0; j < bound1; j++) {
+			get_bit_vector(v1, j, num_tasks_in_stream);
+			for (int k = 0; k < num_tasks_in_stream; k++) {
+				task_chain[k].set_type(v1[k]);
+			}
+
+			/*
+			 * The third hierarchy search: for each task mapped onto CPU,
+			 * enumerate available frequencies. As the frequency search space
+			 * is larger than 2, we use DFS.
+			 */
+			std::vector<Task *> cpu_task_vector;
+			int cpu_task_num = 0;
+
+			for (int k = 0; k < num_tasks_in_stream; k++) {
+				if (0 == v1[i])
+					cpu_task_vector.push_back(&task_chain[i]);
+			}
+			cpu_task_num = cpu_task_vector.size();
+
+			DFS_freq_space(cpu_task_vector, 0, cpu_task_num);
+		}
+
+		/*
+		  * Clear footprint for this division.
+		  */
+		bucket->clear();
+	}
+
+	delete [] v0;
+	delete [] v1;
 }
 
 bool Framework::dvfs()

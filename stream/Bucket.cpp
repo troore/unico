@@ -135,6 +135,11 @@ void Bucket::clear()
 	}
 }
 
+void Bucket::set_ns(int n)
+{
+	ns = n;
+}
+
 double Bucket::get_max_stage_len()
 {
 	double max_stage_len;
