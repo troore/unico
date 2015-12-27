@@ -1,15 +1,15 @@
-TARGETS := stream.out
+TARGETS := PipeLatPower.out
 
-SRCS := main.cpp Framework.cpp Task.cpp Bucket.cpp
-SRCS += ../timer/timer.cpp
+SRCS_PLP := main_PipeLatPower.cpp PipeModel.cpp PipeLatPower.cpp Task.cpp Bucket.cpp
+SRCS_PLP += ../timer/timer.cpp
 
-OBJS := $(patsubst %.cpp,%.o,$(SRCS))
+OBJS_PLP := $(patsubst %.cpp,%.o,$(SRCS_PLP))
 
 CXXFLAGS := -g -Wall
 CXXFLAGS += -g -Wall -I../timer
 LINKFLAGS :=
 
-stream.out: $(OBJS)
+PipeLatPower.out: $(OBJS_PLP)
 	$(CXX) -o $@ $^ $(LINKFLAGS)
 
 %.o: %.cpp
