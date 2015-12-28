@@ -6,10 +6,17 @@
 
 PipeModel::PipeModel()
 {
+	pipe = new Bucket;
+}
+
+PipeModel::~PipeModel()
+{
+	delete pipe;
 }
 
 void PipeModel::ReadProfileConfig(char *fname)
 {
+	
 	std::fstream fin;
 //	int tmp;
 
@@ -23,90 +30,56 @@ void PipeModel::ReadProfileConfig(char *fname)
 	// Number of cores on CPU
 	fin >> num_cores_on_cpu;
 
-	// Number of frequencies on each CPU core
-	fin >> num_freqs;
-
-	cpu_freq_scale_space = new double[num_freqs];
-
-	// frequencies on a CPU core
-	for (int i = 0; i < num_freqs; i++)
-		fin >> cpu_freq_scale_space[i];
-
 	fin >> num_tasks_in_stream;
+//	task_chain = new Task[num_tasks_in_stream];
 
 	/*
-	 * latency and power profiling information on CPU under
-	 * highest frequency
-	 */ 
-	cpu_time_highest_freq = new double[num_tasks_in_stream];
-	cpu_power_highest_freq = new double[num_tasks_in_stream];
-
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> cpu_time_highest_freq[i];
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> cpu_power_highest_freq[i];
-
-	/*
-	 * latency and power profiling information on FPGA
-	 */ 
-	fpga_time = new double[num_tasks_in_stream];
-	fpga_power = new double[num_tasks_in_stream];
+	 * profiling information for each task
+	 */
+	Task t;
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		t.assign_attributes(fin);
+		task_chain.push_back(t);
+	}
 	
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> fpga_time[i];
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		fin >> fpga_power[i];
-
 	// bandwidth (MBps)
 	bandwidth = 800;
 
 	// vector of data size per frame between tasks (x4bytes, int)
-	transfer_data_size = new int[num_tasks_in_stream - 1];
-	for (int i = 0; i < (num_tasks_in_stream - 1); i++)
-		fin >> transfer_data_size[i];
+//	transfer_data_size = new int[num_tasks_in_stream - 1];
+	int size;
+	for (int i = 0; i < (num_tasks_in_stream - 1); i++) {
+		fin >> size;
+		transfer_data_size.push_back(size);
+	}
 
 	fin.close();
 }
 
-void PipeModel::OutputProfileConfig()
+void PipeModel::PrintProfileConfig()
 {
-	std::cout << num_cores_on_cpu << std::endl;
-	std::cout << num_freqs << std::endl;
-	for (int i = 0; i < num_freqs; i++)
-		std::cout << cpu_freq_scale_space[i] << " ";
-	std::cout << std::endl;
-	std::cout << num_tasks_in_stream << std::endl;
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		std::cout << cpu_time_highest_freq[i] << " ";
-	std::cout << std::endl;
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		std::cout << cpu_power_highest_freq[i] << " ";
-	std::cout << std::endl;
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		std::cout << fpga_time[i] << " ";
-	std::cout << std::endl;
-	for (int i = 0; i < num_tasks_in_stream; i++)
-		std::cout << fpga_power[i] << " ";
-	std::cout << std::endl;
-	for (int i = 0; i < (num_tasks_in_stream - 1); i++)
-		std::cout << transfer_data_size[i] << " ";
+	std::cout << "Number of CPU cores:\n" << num_cores_on_cpu << std::endl;
+	
+	std::cout << "Number of tasks in stream:\n" << num_tasks_in_stream << std::endl;
+
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		std::cout << "Task#" << i + 1 << ":\n";
+		task_chain[i].print_attributes();
+	}
+
+	std::cout << "Bandwidth:\n" << bandwidth << std::endl;
+
+	std::cout << "Transfer data size:\n";
+	for (std::vector<int>::iterator it = transfer_data_size.begin(); it < transfer_data_size.end(); it++) {
+		std::cout << *it;
+		if (it != transfer_data_size.end())
+			std::cout << " ";
+	}
 	std::cout << std::endl;
 }
 
 void PipeModel::ClearProfileConfig()
 {
-	if (cpu_freq_scale_space)
-		delete [] cpu_freq_scale_space;
-	if (cpu_time_highest_freq)
-		delete [] cpu_time_highest_freq;
-	if (cpu_power_highest_freq)
-		delete [] cpu_power_highest_freq;
-	if (fpga_time)
-		delete [] fpga_time;
-	if (fpga_power)
-		delete [] fpga_power;
-	if (transfer_data_size)
-		delete [] transfer_data_size;
 }
 
 void PipeModel::get_bit_vector(bool *v, int i, int n)
@@ -117,6 +90,21 @@ void PipeModel::get_bit_vector(bool *v, int i, int n)
 	}
 }
 
-PipeModel::~PipeModel()
+void PipeModel::Speak()
 {
+	/*
+	if (!accepted) {
+		std::cout << "Constraints are too rigid.\n";
+		
+		return;
+	}
+	std::cout << "#tid\t#sid\t#pid\tfreq" << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		std::cout << i << "\t";
+		std::cout << task_chain[i].get_sno() << "\t";
+		std::cout << task_chain[i].get_type() << "\t";
+		std::cout << task_chain[i].get_cpu_freq() << "\t";
+		std::cout << "\n";
+	}
+	*/
 }

@@ -4,40 +4,41 @@
 #include <cstring>
 #include <iomanip>
 #include "PipeModel.h"
-#include "PipeLatPower.h"
+//#include "PipeLatPower.h"
+#include "PipeAreaPower.h"
 
 #include "timer.h"
 
 int main(int argc, char *argv[])
 {
-	double pc, lc;
-//	Framework *f;
-	PipeLatPower *f;
+	double pc;
+	double lc, ac;
+
+	PipeAreaPower *f;
 
 	char fname[50];
 
 	double start, stop, elapsed_time;
 
 	if (argc != 4) {
-		std::cout << "Usage: ./PipeLatPower.out filename power_cap latency_constraint" << std::endl;
+		std::cout << "Usage: ./stream.out filename power_cap area_constraint" << std::endl;
 		exit(1);
 	}
 	
 	strcpy(fname, argv[1]);
 	pc = atof(argv[2]);
 	lc = atof(argv[3]);
-//	f = new Framework(pc, lc);
-	f = new PipeLatPower(pc, lc);
+
+//	f = new PipeLatPower(pc, lc);
+	f = new PipeAreaPower(pc, ac);
 
 	f->ReadProfileConfig(fname);
+	f->PrintProfileConfig();
 
 	start = dtime();
 
-//	f->output_profile_config();
-//	for (int h = 0; h < 1000; h++)
-//	f->heuristic();
-
-	f->BranchBound();
+//	f->BB();
+//	f->DP();
 
 	stop = dtime();
 

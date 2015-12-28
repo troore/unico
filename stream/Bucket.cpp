@@ -4,33 +4,6 @@
 #include "Bucket.h"
 #include "Task.h"
 
-/*
-template<class C> Bucket<C>::Bucket()
-{}
-
-template<class C> Bucket<C>::Bucket(int no)
-	: n(no)
-{
-	head = new C *[n];
-
-	for (int i = 0; i < n; i++)
-		head[i] = NULL;
-}
-
-template<class C> void Bucket<C>::insert(int id, C *t)
-{
-	C *tmp = head[id];
-	head[id] = t;
-	t->next = tmp;
-}
-
-template<class C> Bucket<C>::~Bucket()
-{
-	if (head)
-		delete [] head;
-}
-*/
-
 Bucket::Bucket()
 {
 	ns = 0;
@@ -56,9 +29,9 @@ void Bucket::insert_task(int id, Task *t)
 	t->next = tmp;
 	// update stage time and power
 	// TODO: consider the idle or base power on CPU and FPGA
-	head[id].power = (head[id].power * head[id].time + t->get_power() * t->get_time()) /
-		(head[id].time + t->get_time());
-	head[id].time = head[id].time + t->get_time();
+	head[id].power = (head[id].power * head[id].time + t->get_power() * t->get_lat()) /
+		(head[id].time + t->get_lat());
+	head[id].time = head[id].time + t->get_lat();
 }
 
 bool Bucket::insert_bubble()

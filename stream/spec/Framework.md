@@ -52,6 +52,18 @@ There is a Task object for each task in the stream. In a single Task, we should 
 
 3. The third hierarchy search
 
-Moreover, if a task is mapped onto CPU, we should choose a frequency for it. 
+Moreover, if a task is mapped onto CPU, we should choose a frequency for it. Similarly, if a task is mapped onto FPGA, we should choose an area for it. 
 
 4. Branch pruning
+
++ Latency
+
+When a task is assigned a frequency or an area, and it is the last task for a pipeline stage, if the latency of this pipeline stage will lead to the exceed of latency constraint, we can stop search for the remaining tasks.
+
++ Power
+
+When a task is assigned a frequency or an area, and we manually assign the smallest frequency or area for the remaining tasks, if current power exceeds power constraint, we can stop searching for the remaining frequencies or areas for this task (if we search frequencie or area from small to big).
+
++ Area
+
+Similar to power, when a task is assigned an area, and we manually assign the smallest areas for the remaining tasks, if current area execceds area constraint, we can stop searching for the remaining areas for this task (if we search areas from small to big).

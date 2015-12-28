@@ -9,14 +9,10 @@
 PipeLatPower::PipeLatPower(double pc, double lc)
 	: system_power_cap(pc), latency_constraint(lc)
 {
-	task_chain = new Task[num_tasks_in_stream];
-	bucket = new Bucket;
 }
 
 PipeLatPower::~PipeLatPower()
 {
-	delete [] task_chain;
-	delete [] bucket;
 }
 
 void PipeLatPower::Heuristic()

@@ -14,12 +14,6 @@ private:
 	double throughput_lower_bound;
 	double power_lower_bound;
 	
-	// task chain
-	Task *task_chain;
-	// bucket to simulate the pipeline
-//	Bucket<Task> *bucket;
-	Bucket *bucket;
-	
 	// output
 	double time;
 	double power;

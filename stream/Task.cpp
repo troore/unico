@@ -1,41 +1,36 @@
+
 #include "Task.h"
 
 Task::Task()
 {
 }
 
+Task::~Task()
+{
+}
+
 Task::Task(const Task &T)
 {
-	id = T.id;
-	type = T.type;
-	time = T.time;
-	power = T.power;
-	cpu_freq = T.cpu_freq;
-	cpu_freq_cursor = T.cpu_freq_cursor;
-	next = T.next;
+	*this = T;
 }
 
 Task &Task::operator= (const Task &T)
 {
 	id = T.id;
-	type = T.type;
-	time = T.time;
-	power = T.power;
-	cpu_freq = T.cpu_freq;
-	cpu_freq_cursor = T.cpu_freq_cursor;
+	num_freqs = T.num_freqs;
+	num_areas = T.num_areas;
+	v_lat_cpu = T.v_lat_cpu;
+	v_power_cpu = T.v_power_cpu;
+	v_lat_fpga = T.v_lat_fpga;
+	v_power_fpga = T.v_power_fpga;
+	v_area_fpga = T.v_area_fpga;
+
+	proc_type = T.proc_type;
+	cursor = T.cursor;
+	sno = T.sno;
 	next = T.next;
-
+	
 	return *this;
-}
-
-void Task::init_perf_model()
-{
-	chi = 5.5;
-}
-
-void Task::init_power_model()
-{
-	lambda = 1.0;
 }
 
 void Task::set_id(int i)
@@ -43,19 +38,9 @@ void Task::set_id(int i)
 	id = i;
 }
 
-void Task::set_type(int t)
+void Task::set_proc_type(int t)
 {
-	type = t;
-}
-
-void Task::set_time(double t)
-{
-	time = t;
-}
-
-void Task::set_power(double p)
-{
-	power = p;
+	proc_type = t;
 }
 
 void Task::set_sno(int no)
@@ -63,14 +48,9 @@ void Task::set_sno(int no)
 	sno = no;
 }
 
-void Task::set_cpu_freq(double f)
+void Task::set_cursor(int c)
 {
-	cpu_freq = f;
-}
-
-void Task::set_cpu_freq_cursor(int c)
-{
-	cpu_freq_cursor = c;
+	cursor = c;
 }
 
 int Task::get_id()
@@ -78,19 +58,19 @@ int Task::get_id()
 	return id;
 }
 
-int Task::get_type()
+int Task::get_num_freqs()
 {
-	return type;
+	return num_freqs;
 }
 
-double Task::get_time()
+int Task::get_num_areas()
 {
-	return time;
+	return num_areas;
 }
 
-double Task::get_power()
+int Task::get_proc_type()
 {
-	return power;
+	return proc_type;
 }
 
 int Task::get_sno()
@@ -98,26 +78,88 @@ int Task::get_sno()
 	return sno;
 }
 
-double Task::get_cpu_freq()
+int Task::get_cursor()
 {
-	return cpu_freq;
+	return cursor;
 }
 
-int Task::get_cpu_freq_cursor()
+double Task::get_lat()
 {
-	return cpu_freq_cursor;
+	return (1.0 - proc_type) * v_lat_cpu[cursor] + (double)proc_type * v_lat_fpga[cursor];
 }
 
-double Task::get_time_at_cpu_freq(double freq)
+double Task::get_power()
 {
-	return 0.0;
+	return (1.0 - proc_type) * v_power_cpu[cursor] + (double)proc_type * v_power_fpga[cursor];
 }
 
-double Task::get_power_at_cpu_freq(double freq)
+void Task::assign_attributes(std::fstream &fin)
 {
-	return 0.0;
+	double lat_cpu, power_cpu, lat_fpga, power_fpga, area_fpga;
+	
+	fin >> num_freqs;
+	for (int i = 0; i < num_freqs; i++) {
+		fin >> lat_cpu;
+		v_lat_cpu.push_back(lat_cpu);
+	}
+	for (int i = 0; i < num_freqs; i++) {
+		fin >> power_cpu;
+		v_power_cpu.push_back(power_cpu);
+	}
+	
+	fin >> num_areas;
+	for (int i = 0; i < num_areas; i++) {
+		fin >> lat_fpga;
+		v_lat_fpga.push_back(lat_fpga);
+	}
+	for (int i = 0; i < num_areas; i++) {
+		fin >> power_fpga;
+		v_power_fpga.push_back(power_fpga);
+	}
+	for (int i = 0; i < num_areas; i++) {
+		fin >> area_fpga;
+		v_area_fpga.push_back(area_fpga);
+	}
 }
 
-Task::~Task()
+void Task::print_attributes()
 {
+	std::cout << "Number of frequencies:\n" << num_freqs << std::endl;
+	for (int j = 0; j < num_freqs; j++) {
+		std::cout << v_lat_cpu[j];
+		if (j != (num_freqs - 1))
+			std::cout << " ";
+		else
+			std::cout << std::endl;
+	}
+	for (int j = 0; j < num_freqs; j++) {
+		std::cout << v_power_cpu[j];
+		if (j != (num_freqs - 1))
+			std::cout << " ";
+		else
+			std::cout << std::endl;
+	}
+	
+	std::cout << "Number of areas:\n" << num_areas << std::endl;
+	for (int j = 0; j < num_areas; j++) {
+		std::cout << v_lat_fpga[j];
+		if (j != (num_areas - 1))
+			std::cout << " ";
+		else
+			std::cout << std::endl;
+	}
+	for (int j = 0; j < num_areas; j++) {
+		std::cout << v_power_fpga[j];
+		if (j != (num_areas - 1))
+			std::cout << " ";
+		else
+			std::cout << std::endl;
+	}
+	for (int j = 0; j < num_areas; j++) {
+		std::cout << v_area_fpga[j];
+		if (j != (num_areas - 1))
+			std::cout << " ";
+		else
+			std::cout << std::endl;
+	}
 }
