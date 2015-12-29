@@ -24,9 +24,12 @@ protected:
 	// use Bucket class to simulate pipeline structure
 //	Bucket<Task> *bucket;
 	Bucket *pipe;
+
+	bool is_solved;
 	
 public:
-	PipeModel();
+//	PipeModel();
+	PipeModel(int = 0, int = 0, bool = false);
 	~PipeModel();
 	void ReadProfileConfig(char *fname);
 	void PrintProfileConfig();

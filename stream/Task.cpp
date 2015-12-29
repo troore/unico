@@ -93,6 +93,11 @@ double Task::get_power()
 	return (1.0 - proc_type) * v_power_cpu[cursor] + (double)proc_type * v_power_fpga[cursor];
 }
 
+int Task::get_area()
+{
+	return proc_type * v_area_fpga[cursor];
+}
+
 void Task::assign_attributes(std::fstream &fin)
 {
 	double lat_cpu, power_cpu, lat_fpga, power_fpga, area_fpga;

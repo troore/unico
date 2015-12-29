@@ -4,14 +4,22 @@
 
 #include "PipeModel.h"
 
+/*
 PipeModel::PipeModel()
 {
+}
+*/
+
+PipeModel::PipeModel(int nc, int nt, bool flag)
+	: num_cores_on_cpu(nc), num_tasks_in_stream(nt), is_solved(flag)
+{	
 	pipe = new Bucket;
 }
 
 PipeModel::~PipeModel()
 {
-	delete pipe;
+	if (pipe)
+		delete pipe;
 }
 
 void PipeModel::ReadProfileConfig(char *fname)
@@ -36,8 +44,13 @@ void PipeModel::ReadProfileConfig(char *fname)
 	/*
 	 * profiling information for each task
 	 */
-	Task t;
 	for (int i = 0; i < num_tasks_in_stream; i++) {
+		Task t;
+		
+		t.set_id(i);
+		t.set_proc_type(0); // CPU if unknown
+		t.set_cursor(0); // most pessimistic >_<
+		t.set_sno(0); // always put into the first pipeline stage at the beginning
 		t.assign_attributes(fin);
 		task_chain.push_back(t);
 	}
@@ -98,13 +111,13 @@ void PipeModel::Speak()
 		
 		return;
 	}
-	std::cout << "#tid\t#sid\t#pid\tfreq" << std::endl;
+	*/
+	std::cout << "#tid\t#sid\t#pid\t#cursor" << std::endl;
 	for (int i = 0; i < num_tasks_in_stream; i++) {
 		std::cout << i << "\t";
 		std::cout << task_chain[i].get_sno() << "\t";
-		std::cout << task_chain[i].get_type() << "\t";
-		std::cout << task_chain[i].get_cpu_freq() << "\t";
+		std::cout << task_chain[i].get_proc_type() << "\t";
+		std::cout << task_chain[i].get_cursor() << "\t";
 		std::cout << "\n";
 	}
-	*/
 }

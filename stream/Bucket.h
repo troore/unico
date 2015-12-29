@@ -7,29 +7,31 @@
 
 struct Head {
 	Task *ph;
-	int n;
-	double time;
-	double power;
+	int n; // number of tasks in current stage
+	double lat;
 };
 
 class Bucket {
 private:
 	Head head[MAXS];
-	int ns;	// current number of stages
+	int ns;	// number of stages
 public:
 	Bucket();
 //	Bucket(int no);
 	~Bucket();
-	void insert_task(int id, Task *t);
+	void insert_task(int sno, Task *t);
 	bool insert_bubble();
-	void merge(int a, int b);
+	void merge_neib(int a, int b);
 	void clear();
 	void set_ns(int n);
-	double get_max_stage_len();
-	double get_stage_len(int sno);
-	double get_pipeline_throughput();
-	double get_pipeline_latency();
+	double get_max_stage_lat();
+	double get_stage_lat(int sno);
+	double get_pipeline_thr();
+	double get_pipeline_lat();
 	double get_pipeline_power();
+	int get_pipeline_area();
+	int get_sno_tid(int tid);
+	void update_stage(int sno);
 };
 
 /*

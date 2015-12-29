@@ -27,17 +27,18 @@ int main(int argc, char *argv[])
 	
 	strcpy(fname, argv[1]);
 	pc = atof(argv[2]);
-	lc = atof(argv[3]);
+//	lc = atof(argv[3]);
+	ac = atof(argv[3]);
 
 //	f = new PipeLatPower(pc, lc);
 	f = new PipeAreaPower(pc, ac);
 
 	f->ReadProfileConfig(fname);
-	f->PrintProfileConfig();
+//	f->PrintProfileConfig();
 
 	start = dtime();
 
-//	f->BB();
+	f->BB();
 //	f->DP();
 
 	stop = dtime();

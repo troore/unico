@@ -4,36 +4,67 @@
 #include "Bucket.h"
 #include "Task.h"
 
+/*
+ * Pipeline structure
+ *
+ * Task chain:
+ *   0    1    2    3    4
+ * --------------------------
+ * | t0 | t1 | t2 | t3 | t4 |
+ * --------------------------
+ *
+ * Bucket:
+ *	 ------
+ * 3 | t4 |
+ *   -----------
+ * 2 | t2 | t3 |
+ *   -----------
+ * 1 | t1 |
+ *   ------
+ * 0 | t0 |
+ *   ------
+ *
+ * */
+
 Bucket::Bucket()
 {
 	ns = 0;
 	for (int i = 0; i < MAXS; i++) {
-		head[i].time = 0.0;
-		head[i].power = 0.0;
+		head[i].lat = 0.0;
 		head[i].ph = NULL;
 		head[i].n = 0;
 	}
 }
 
-void Bucket::insert_task(int id, Task *t)
+Bucket::~Bucket()
+{
+}
+
+/*
+ * Insert a task "t" into a pipeline stage indexed by "sno". 
+ */
+void Bucket::insert_task(int sno, Task *t)
 {
 	Task *tmp;
 
 	// allocate a new stage
-	if (head[id].ph == NULL)
+	if (head[sno].ph == NULL)
 		ns++;
 
 	// insert _t_ into the _id_th stage 
-	tmp = head[id].ph;
-	head[id].ph = t;
+	tmp = head[sno].ph;
+	head[sno].ph = t;
 	t->next = tmp;
-	// update stage time and power
-	// TODO: consider the idle or base power on CPU and FPGA
-	head[id].power = (head[id].power * head[id].time + t->get_power() * t->get_lat()) /
-		(head[id].time + t->get_lat());
-	head[id].time = head[id].time + t->get_lat();
+
+	// update stage latency
+	head[sno].lat = head[sno].lat + t->get_lat();
 }
 
+/*
+ * Actually, "bubble" is borrowed from CPU pipeline.
+ * When inserting a bubble, we pick two pipeline stages 
+ * and merge them according to some metrics.
+ */
 bool Bucket::insert_bubble()
 {
 	/*
@@ -43,7 +74,7 @@ bool Bucket::insert_bubble()
 	int sno = 0;
 
 	for (int i = 1; i < ns; i++) {
-		if (head[i].time < head[sno].time)
+		if (head[i].lat < head[sno].lat)
 			sno = i;
 	}
 
@@ -60,7 +91,7 @@ bool Bucket::insert_bubble()
 		sno_below_neb = sno + 1;
 
 	if (sno_above_neb >= 0 && sno_above_neb >= 0) {
-		if (head[sno_above_neb].time < head[sno_above_neb].time)
+		if (head[sno_above_neb].lat < head[sno_above_neb].lat)
 			sno_min_neb = sno_above_neb;
 		else
 			sno_min_neb = sno_below_neb;
@@ -73,14 +104,18 @@ bool Bucket::insert_bubble()
 		return false;
 
 	// do the merge
-	merge(sno, sno_min_neb);
+	merge_neib(sno, sno_min_neb);
 
 	// squeeze vacant spages to compact pipeline
 	
 	return true;
 }
 
-void Bucket::merge(int a, int b)
+/*
+ * Merge two pipeline stages in neighbour, and adjust 
+ * pipeline structure.
+ * */
+void Bucket::merge_neib(int a, int b)
 {
 	Task *p, *q;
 	
@@ -94,15 +129,25 @@ void Bucket::merge(int a, int b)
 		p = p->next;
 	// find head of stage _a_
 	q = head[a].ph;
+	// insert _a_ before _b_
 	head[a].ph = head[b].ph;
 	p->next = q;
+
+	/*
+	 * Adjust pipeline structure: move each stage backward for 
+	 * one step.
+	 * */
+	for (int i = a + 1; i <= ns; i++) {
+		head[i - 1] = head[i];
+	}
+
+	ns--;
 }
 
 void Bucket::clear()
 {
 	for (int i = 0; i < ns; i++) {
-		head[i].time = 0.0;
-		head[i].power = 0.0;
+		head[i].lat = 0.0;
 		head[i].ph = NULL;
 		head[i].n = 0;
 	}
@@ -113,48 +158,101 @@ void Bucket::set_ns(int n)
 	ns = n;
 }
 
-double Bucket::get_max_stage_len()
+double Bucket::get_max_stage_lat()
 {
-	double max_stage_len;
+	double max_stage_lat;
 
-	max_stage_len = -1.0;
+	max_stage_lat = -1.0;
 	for (int i = 0; i < ns; i++) {
 		if (head[i].ph != NULL) {
 			// if the _i_th stage is not vacant
-			if (head[i].time - max_stage_len > 1e-3)
-				max_stage_len = head[i].time;
+			if (get_stage_lat(i) - max_stage_lat > 1e-3)
+				max_stage_lat = head[i].lat;
 		}
 	}
 
-	return max_stage_len;
+	return max_stage_lat;
 }
 
-double Bucket::get_stage_len(int sno)
+double Bucket::get_stage_lat(int sno)
 {
-	return head[sno].time;
+	return head[sno].lat;
 }
 
-double Bucket::get_pipeline_latency()
+double Bucket::get_pipeline_lat()
 {
-	return (get_max_stage_len() * ns);
+	return (get_max_stage_lat() * ns);
 }
 
-double Bucket::get_pipeline_throughput()
+double Bucket::get_pipeline_thr()
 {
-	return 1.0 / get_max_stage_len();
+	return 1.0 / get_max_stage_lat();
 }
 
 double Bucket::get_pipeline_power()
 {
-	double power = 0.0;
+	double energy = 0.0, power = 0.0;
 
 	for (int i = 0; i < ns; i++) {
-		power += head[i].power;
+		Task *p = head[i].ph;
+
+		while (p) {
+			energy += (p->get_lat() * p->get_power());
+			p = p->next;
+		}
 	}
+
+	power = energy / get_max_stage_lat();
 
 	return power;
 }
 
-Bucket::~Bucket()
+int Bucket::get_pipeline_area()
 {
+	int area = 0;
+
+	for (int i = 0; i < ns; i++) {
+		Task *p = head[i].ph;
+
+		while (p) {
+			area += p->get_area();
+			p = p->next;
+		}
+	}
+
+	return area;
+}
+
+/*
+ * Get stage number of a task.
+ * */
+int Bucket::get_sno_tid(int tid)
+{
+	for (int i = 0; i < ns; i++) {
+		Task *p = head[i].ph;
+
+		while (p) {
+			if (p->get_id() == tid)
+				return i;
+			p = p->next;
+		}
+	}
+
+	// you should never get here, error
+	return -1;
+}
+
+/*
+ * Update stage information, e.g., latency, as neccesary. 
+ * It may be caused by task's update in this stage.
+ * */
+void Bucket::update_stage(int sno)
+{
+	Task *p = head[sno].ph;
+
+	head[sno].lat = 0.0;
+	while (p) {
+		head[sno].lat += p->get_lat();
+		p = p->next;
+	}
 }
