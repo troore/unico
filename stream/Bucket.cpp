@@ -31,9 +31,11 @@ Bucket::Bucket()
 	ns = 0;
 	for (int i = 0; i < MAXS; i++) {
 		head[i].lat = 0.0;
+		head[i].power_cpu_base = 4.4; // 4.4 Watt is from measurement
 		head[i].ph = NULL;
 		head[i].n = 0;
 	}
+	power_fpga_base = 0.120; // from measurement too
 }
 
 Bucket::~Bucket()
@@ -202,7 +204,13 @@ double Bucket::get_pipeline_power()
 		}
 	}
 
+	// active
 	power = energy / get_max_stage_lat();
+
+	for (int i = 0; i < ns; i++) {
+		power += head[i].power_cpu_base;
+	}
+	power += power_fpga_base;
 
 	return power;
 }

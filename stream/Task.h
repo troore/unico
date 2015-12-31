@@ -19,11 +19,11 @@ class Task {
 	
 	// vector of task latencies on CPU
 	std::vector<double> v_lat_cpu;
-	// vector of task powers on CPU
+	// vector of task powers on CPU (active power)
 	std::vector<double> v_power_cpu;
 	// vector of tasks latencies on FPGA
 	std::vector<double> v_lat_fpga;
-	// vector of task powers on FPGA
+	// vector of task powers on FPGA (active power)
 	std::vector<double> v_power_fpga;
 	// vector of task areas on FPGA (number of slices for now)
 	std::vector<int> v_area_fpga;

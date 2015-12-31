@@ -12,7 +12,7 @@ PipeAreaPower::PipeAreaPower()
 }
 
 PipeAreaPower::PipeAreaPower(double pc, double ac, int nt, int nc, bool flag)
-	: system_power_cap(pc), area_constraint(ac), PipeModel(nt, nc, flag)
+	: PipeModel(nt, nc, flag), system_power_cap(pc), area_constraint(ac)
 {
 }
 
@@ -108,7 +108,7 @@ void PipeAreaPower::BB()
 	 * The first hierarchy search
 	 */
 	v0[0] = v0[num_tasks_in_stream] = 1;
-	for (int i = 0; i < bound0 - 1; i++) {
+	for (int i = 0; i < bound0; i++) {
 		get_bit_vector(v0 + 1, i, num_tasks_in_stream - 1);
 		/*
 		 * Divide the stream into pipeline stages and 
@@ -123,6 +123,7 @@ void PipeAreaPower::BB()
 				// insert tasks
 				for (int k = start_id; k < stop_id; k++) {
 					pipe->insert_task(sno, &task_chain[k]);
+					task_chain[k].set_sno(sno);
 				}
 				start_id = stop_id;
 				sno++;
@@ -171,9 +172,16 @@ void PipeAreaPower::DP()
 
 void PipeAreaPower::Speak()
 {
+	/*
 	std::cout << "Thr:\t" << pipe->get_pipeline_thr() << std::endl;
 	std::cout << "Area:\t" << pipe->get_pipeline_area() << std::endl;
 	std::cout << "Power:\t" << pipe->get_pipeline_power() << std::endl;
 
 	PipeModel::Speak();
+	*/
+//	std::cout << pipe->get_pipeline_area() << "\t";
+	std::cout << pipe->get_pipeline_power() << "\t";
+	std::cout << pipe->get_pipeline_area() << "\t";
+	std::cout << pipe->get_pipeline_thr() << "\n";
+	
 }

@@ -9,12 +9,14 @@ struct Head {
 	Task *ph;
 	int n; // number of tasks in current stage
 	double lat;
+	double power_cpu_base;
 };
 
 class Bucket {
 private:
 	Head head[MAXS];
 	int ns;	// number of stages
+	double power_fpga_base;
 public:
 	Bucket();
 //	Bucket(int no);
