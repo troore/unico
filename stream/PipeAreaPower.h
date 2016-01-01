@@ -11,20 +11,22 @@ private:
 	double area_constraint;
 
 	// output
-	double pipe_optthr;
-	double pipe_area;
-	double pipe_power;
+	double pipe_thr_opt;
+	double pipe_area_opt;
+	double pipe_power_opt;
 	
 public:
 	PipeAreaPower();
-	PipeAreaPower(double, double, int = 0, int = 0, bool = false);
+	PipeAreaPower(double, double, int = 0, int = 0);
 	~PipeAreaPower();
 //	void InitTaskChain(bool *ST);
 	void BB();
 	void DP();
 	void DFS(std::vector<Task> &tv, int k, int n);
 	void DFSOptThr(std::vector<Task> &tv, int k, int n);
-	void Speak();
+//	void Speak();
+	void Report();
+	void ReportOpt();
 };
 
 #endif

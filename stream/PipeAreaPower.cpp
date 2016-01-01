@@ -11,8 +11,8 @@ PipeAreaPower::PipeAreaPower()
 {
 }
 
-PipeAreaPower::PipeAreaPower(double pc, double ac, int nt, int nc, bool flag)
-	: PipeModel(nt, nc, flag), system_power_cap(pc), area_constraint(ac)
+PipeAreaPower::PipeAreaPower(double pc, double ac, int nt, int nc)
+	: PipeModel(nt, nc), system_power_cap(pc), area_constraint(ac)
 {
 }
 
@@ -27,7 +27,7 @@ void PipeAreaPower::DFS(std::vector<Task> &tv, int k, int n)
 {
 	if (k == n) {
 		// Have assigned all tasks a frequency or an area
-		Speak();
+		Report();
 		
 		return;
 	}
@@ -63,10 +63,21 @@ void PipeAreaPower::DFS(std::vector<Task> &tv, int k, int n)
 void PipeAreaPower::DFSOptThr(std::vector<Task> &tv, int k, int n)
 {
 	if (k == n) {
+		double area = pipe->get_pipeline_area();
+		double power = pipe->get_pipeline_power();
 		double thr = pipe->get_pipeline_thr();
 
-		if (pipe_optthr < thr)
-			pipe_optthr = thr;
+		if (power <= system_power_cap && area <= area_constraint) {
+			if (pipe_thr_opt < thr) {
+				pipe_thr_opt = thr;
+				pipe_area_opt = area;
+				pipe_power_opt = power;
+				// record
+				for (int i = 0; i < num_tasks_in_stream; i++) {
+					lwtask_chain[i] = task_chain[i];
+				}
+			}
+		}
 
 		return;
 	}
@@ -79,7 +90,8 @@ void PipeAreaPower::DFSOptThr(std::vector<Task> &tv, int k, int n)
 
 		for (int i = 0; i < num_freqs; i++) {
 			tv[k].set_cursor(i);
-			DFS(tv, k + 1, n);
+			pipe->update_stage(pipe->get_sno_tid(k));
+			DFSOptThr(tv, k + 1, n);
 		}
 	}
 	else {
@@ -88,7 +100,8 @@ void PipeAreaPower::DFSOptThr(std::vector<Task> &tv, int k, int n)
 
 		for (int i = 0; i < num_areas; i++) {
 			tv[k].set_cursor(i);
-			DFS(tv, k + 1, n);
+			pipe->update_stage(pipe->get_sno_tid(k));
+			DFSOptThr(tv, k + 1, n);
 		}
 	}
 }
@@ -147,10 +160,9 @@ void PipeAreaPower::BB()
 			 * enumerate available frequencies. As the frequency and area
 			 * search space is larger than 2, we use DFS.
 			 */
-			DFS(task_chain, 0, num_tasks_in_stream);
+			//	DFS(task_chain, 0, num_tasks_in_stream);
 			
-			//	pipe_thr = 0.0;
-			//	DFSOptThr(task_chain, 0, num_tasks_in_stream);
+			DFSOptThr(task_chain, 0, num_tasks_in_stream);
 		}
 
 		/*
@@ -158,6 +170,8 @@ void PipeAreaPower::BB()
 		 */
 		pipe->clear();
 	}
+
+	ReportOpt();
 
 	delete [] v0;
 	delete [] v1;
@@ -170,18 +184,20 @@ void PipeAreaPower::DP()
 {
 }
 
-void PipeAreaPower::Speak()
+void PipeAreaPower::Report()
 {
-	/*
 	std::cout << "Thr:\t" << pipe->get_pipeline_thr() << std::endl;
 	std::cout << "Area:\t" << pipe->get_pipeline_area() << std::endl;
 	std::cout << "Power:\t" << pipe->get_pipeline_power() << std::endl;
 
-	PipeModel::Speak();
-	*/
-//	std::cout << pipe->get_pipeline_area() << "\t";
-	std::cout << pipe->get_pipeline_power() << "\t";
-	std::cout << pipe->get_pipeline_area() << "\t";
-	std::cout << pipe->get_pipeline_thr() << "\n";
-	
+	PipeModel::Report();
+}
+
+void PipeAreaPower::ReportOpt()
+{
+	std::cout << "ThrOpt:\t" << pipe_thr_opt << std::endl;
+	std::cout << "AreaOpt:\t" << pipe_area_opt << std::endl;
+	std::cout << "PowerOpt:\t" << pipe_power_opt << std::endl;
+
+	PipeModel::ReportOpt();
 }

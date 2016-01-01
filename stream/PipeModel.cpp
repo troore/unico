@@ -11,7 +11,7 @@ PipeModel::PipeModel()
 */
 
 PipeModel::PipeModel(int nc, int nt, bool flag)
-	: num_cores_on_cpu(nc), num_tasks_in_stream(nt), is_solved(flag)
+	: num_cores_on_cpu(nc), num_tasks_in_stream(nt)
 {	
 	pipe = new Bucket;
 }
@@ -46,6 +46,7 @@ void PipeModel::ReadProfileConfig(char *fname)
 	 */
 	for (int i = 0; i < num_tasks_in_stream; i++) {
 		Task t;
+		LWTask lwt;
 		
 		t.set_id(i);
 		t.set_proc_type(0); // CPU if unknown
@@ -53,6 +54,9 @@ void PipeModel::ReadProfileConfig(char *fname)
 		t.set_sno(0); // always put into the first pipeline stage at the beginning
 		t.assign_attributes(fin);
 		task_chain.push_back(t);
+
+		lwt = t;
+		lwtask_chain.push_back(lwt);
 	}
 	
 	// bandwidth (MBps)
@@ -103,7 +107,7 @@ void PipeModel::get_bit_vector(bool *v, int i, int n)
 	}
 }
 
-void PipeModel::Speak()
+void PipeModel::Report()
 {
 	/*
 	if (!accepted) {
@@ -118,6 +122,18 @@ void PipeModel::Speak()
 		std::cout << task_chain[i].get_sno() << "\t";
 		std::cout << task_chain[i].get_proc_type() << "\t";
 		std::cout << task_chain[i].get_cursor() << "\t";
+		std::cout << "\n";
+	}
+}
+
+void PipeModel::ReportOpt()
+{
+	std::cout << "#tid\t#sid\t#pid\t#cursor" << std::endl;
+	for (int i = 0; i < num_tasks_in_stream; i++) {
+		std::cout << i << "\t";
+		std::cout << lwtask_chain[i].get_sno() << "\t";
+		std::cout << lwtask_chain[i].get_proc_type() << "\t";
+		std::cout << lwtask_chain[i].get_cursor() << "\t";
 		std::cout << "\n";
 	}
 }

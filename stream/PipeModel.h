@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Task.h"
+#include "LWTask.h"
 #include "Bucket.h"
 
 #define MAX_TASK_NUM 10
@@ -21,11 +22,12 @@ protected:
 
 	// task chain
 	std::vector<Task> task_chain;
+	std::vector<LWTask> lwtask_chain;
 	// use Bucket class to simulate pipeline structure
 //	Bucket<Task> *bucket;
 	Bucket *pipe;
 
-	bool is_solved;
+//	bool is_solved;
 	
 public:
 //	PipeModel();
@@ -35,7 +37,8 @@ public:
 	void PrintProfileConfig();
 	void ClearProfileConfig();
 	void get_bit_vector(bool *v, int i, int n);
-	void Speak();
+	void Report();
+	void ReportOpt();
 };
 
 #endif
