@@ -117,12 +117,23 @@ void PipeAreaPower::BB()
 	int bound0 = (int)pow(2.0, (num_tasks_in_stream - 1));
 	int bound1 = (int)pow(2.0, num_tasks_in_stream);
 
+	pipe_thr_opt = -1.0;
 	/*
 	 * The first hierarchy search
 	 */
 	v0[0] = v0[num_tasks_in_stream] = 1;
 	for (int i = 0; i < bound0; i++) {
 		get_bit_vector(v0 + 1, i, num_tasks_in_stream - 1);
+
+		int nc = 1;
+		
+		for (int j = 1; j < num_tasks_in_stream; j++) {
+			if (v0[j])
+				nc++;
+		}
+		if (nc > num_cores_on_cpu)
+			continue;
+		
 		/*
 		 * Divide the stream into pipeline stages and 
 		 * insert the tasks of each pipeline stage into
@@ -148,7 +159,7 @@ void PipeAreaPower::BB()
 		 * The second hierarchy search: for each pipeline stage,
 		 * enumerate processor type for each task in this stage.
 		 */
-		for (int j = 0; j < bound1; j++) {
+		for (int j = 0 /*bound1 - 1*/; j < /*bound1*/ 1; j++) {
 			get_bit_vector(v1, j, num_tasks_in_stream);
 			for (int k = 0; k < num_tasks_in_stream; k++) {
 				task_chain[k].set_proc_type(v1[k]);
@@ -195,9 +206,14 @@ void PipeAreaPower::Report()
 
 void PipeAreaPower::ReportOpt()
 {
-	std::cout << "ThrOpt:\t" << pipe_thr_opt << std::endl;
-	std::cout << "AreaOpt:\t" << pipe_area_opt << std::endl;
-	std::cout << "PowerOpt:\t" << pipe_power_opt << std::endl;
+	if (pipe_thr_opt < 0){
+		std::cout << "Cannot satisfy constraints." << std::endl;
+	}
+	else {
+		std::cout << "ThrOpt:\t" << pipe_thr_opt << std::endl;
+		std::cout << "AreaOpt:\t" << pipe_area_opt << std::endl;
+		std::cout << "PowerOpt:\t" << pipe_power_opt << std::endl;
 
-	PipeModel::ReportOpt();
+		PipeModel::ReportOpt();
+	}
 }
