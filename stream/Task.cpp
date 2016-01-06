@@ -110,6 +110,7 @@ void Task::assign_attributes(std::fstream &fin)
 	for (int i = 0; i < num_freqs; i++) {
 		fin >> power_cpu;
 		v_power_cpu.push_back(power_cpu - 4.4);
+	//	v_power_cpu.push_back(power_cpu);
 	}
 	
 	fin >> num_areas;

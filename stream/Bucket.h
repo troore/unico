@@ -16,6 +16,7 @@ class Bucket {
 private:
 	Head head[MAXS];
 	int ns;	// number of stages
+//	double power_cpu_base;
 	double power_fpga_base;
 public:
 	Bucket();

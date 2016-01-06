@@ -35,7 +35,10 @@ Bucket::Bucket()
 		head[i].ph = NULL;
 		head[i].n = 0;
 	}
+//	power_cpu_base = 4.4; // 4.4 Watt is from measurement
 	power_fpga_base = 0.120; // from measurement too
+//	power_cpu_base = 0.0; // 4.4 Watt is from measurement
+//	power_fpga_base = 0.0; // from measurement too
 }
 
 Bucket::~Bucket()
@@ -210,6 +213,7 @@ double Bucket::get_pipeline_power()
 	for (int i = 0; i < ns; i++) {
 		power += head[i].power_cpu_base;
 	}
+//	power += power_cpu_base;
 	power += power_fpga_base;
 
 	return power;

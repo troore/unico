@@ -159,7 +159,7 @@ void PipeAreaPower::BB()
 		 * The second hierarchy search: for each pipeline stage,
 		 * enumerate processor type for each task in this stage.
 		 */
-		for (int j = 0 /*bound1 - 1*/; j < /*bound1*/ 1; j++) {
+		for (int j = 0 /*bound1 - 1*/; j < bound1 /*1*/; j++) {
 			get_bit_vector(v1, j, num_tasks_in_stream);
 			for (int k = 0; k < num_tasks_in_stream; k++) {
 				task_chain[k].set_proc_type(v1[k]);
