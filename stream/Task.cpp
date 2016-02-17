@@ -93,6 +93,11 @@ double Task::get_power()
 	return (1.0 - proc_type) * v_power_cpu[cursor] + (double)proc_type * v_power_fpga[cursor];
 }
 
+double Task::get_eng()
+{
+	return get_power() * get_lat();
+}
+
 int Task::get_area()
 {
 	return proc_type * v_area_fpga[cursor];

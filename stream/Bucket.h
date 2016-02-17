@@ -9,14 +9,16 @@ struct Head {
 	Task *ph;
 	int n; // number of tasks in current stage
 	double lat;
-	double power_cpu_base;
+	double power;
+//	double power_cpu_base;
+	double eng;
 };
 
 class Bucket {
 private:
 	Head head[MAXS];
 	int ns;	// number of stages
-//	double power_cpu_base;
+	double power_cpu_base;
 	double power_fpga_base;
 public:
 	Bucket();
@@ -29,9 +31,11 @@ public:
 	void set_ns(int n);
 	double get_max_stage_lat();
 	double get_stage_lat(int sno);
+	double get_stage_eng(int sno);
 	double get_pipeline_thr();
 	double get_pipeline_lat();
 	double get_pipeline_power();
+	double get_pipeline_eng();
 	int get_pipeline_area();
 	int get_sno_tid(int tid);
 	void update_stage(int sno);

@@ -31,11 +31,13 @@ Bucket::Bucket()
 	ns = 0;
 	for (int i = 0; i < MAXS; i++) {
 		head[i].lat = 0.0;
-		head[i].power_cpu_base = 4.4; // 4.4 Watt is from measurement
+		head[i].power = 0.0;
+//		head[i].power_cpu_base = 4.4; // 4.4 Watt is from measurement
+		head[i].eng = 0.0;
 		head[i].ph = NULL;
 		head[i].n = 0;
 	}
-//	power_cpu_base = 4.4; // 4.4 Watt is from measurement
+	power_cpu_base = 4.4; // 4.4 Watt is from measurement
 	power_fpga_base = 0.120; // from measurement too
 //	power_cpu_base = 0.0; // 4.4 Watt is from measurement
 //	power_fpga_base = 0.0; // from measurement too
@@ -184,9 +186,27 @@ double Bucket::get_stage_lat(int sno)
 	return head[sno].lat;
 }
 
+double Bucket::get_stage_eng(int sno)
+{
+	return head[sno].eng;
+}
+
 double Bucket::get_pipeline_lat()
 {
 	return (get_max_stage_lat() * ns);
+}
+
+double Bucket::get_pipeline_eng()
+{
+	double eng = 0.0;
+
+	for (int i = 0; i < ns; i++) {
+		eng += get_stage_eng(i);
+	}
+
+	eng += (power_cpu_base + power_fpga_base) * get_pipeline_lat();
+
+	return eng / 1000.0; // J
 }
 
 double Bucket::get_pipeline_thr()
@@ -210,10 +230,12 @@ double Bucket::get_pipeline_power()
 	// active
 	power = energy / get_max_stage_lat();
 
+	/*
 	for (int i = 0; i < ns; i++) {
 		power += head[i].power_cpu_base;
 	}
-//	power += power_cpu_base;
+	*/
+	power += power_cpu_base;
 	power += power_fpga_base;
 
 	return power;
@@ -256,15 +278,17 @@ int Bucket::get_sno_tid(int tid)
 
 /*
  * Update stage information, e.g., latency, as neccesary. 
- * It may be caused by task's update in this stage.
+ * It may be caused by some task's update in this stage.
  * */
 void Bucket::update_stage(int sno)
 {
 	Task *p = head[sno].ph;
 
 	head[sno].lat = 0.0;
+	head[sno].eng = 0.0;
 	while (p) {
 		head[sno].lat += p->get_lat();
+		head[sno].eng += p->get_eng();
 		p = p->next;
 	}
 }

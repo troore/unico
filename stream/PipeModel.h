@@ -39,6 +39,8 @@ public:
 	void get_bit_vector(bool *v, int i, int n);
 	void Report();
 	void ReportOpt();
+
+	virtual void BB() = 0;
 };
 
 #endif

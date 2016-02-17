@@ -63,9 +63,11 @@ void PipeAreaPower::DFS(std::vector<Task> &tv, int k, int n)
 void PipeAreaPower::DFSOptThr(std::vector<Task> &tv, int k, int n)
 {
 	if (k == n) {
-		double area = pipe->get_pipeline_area();
+		int area = pipe->get_pipeline_area();
 		double power = pipe->get_pipeline_power();
 		double thr = pipe->get_pipeline_thr();
+
+		//	printf("%.3f %d\n", power, area);
 
 		if (power <= system_power_cap && area <= area_constraint) {
 			if (pipe_thr_opt < thr) {
@@ -193,6 +195,20 @@ void PipeAreaPower::BB()
  */
 void PipeAreaPower::DP()
 {
+	/*
+	 * Memoriozation initialization
+	 */
+
+	/*
+	 * Process
+	 */
+	int P = (int)(system_power_cap * 100);
+	int A = area_constraint;
+	int m = num_cores_on_cpu;
+	int n = num_tasks_in_stream;
+	
+	for (;;) {
+	}
 }
 
 void PipeAreaPower::Report()

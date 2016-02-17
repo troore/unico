@@ -64,6 +64,7 @@ public:
 	int get_proc_type();
 	double get_lat();
 	double get_power();
+	double get_eng();
 	int get_area();
 	int get_sno();
 	int get_cursor();

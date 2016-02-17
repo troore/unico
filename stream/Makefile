@@ -1,6 +1,6 @@
 TARGETS := stream.out
 
-SRCS := main.cpp PipeModel.cpp PipeAreaPower.cpp Task.cpp LWTask.cpp Bucket.cpp
+SRCS := main.cpp PipeModel.cpp PipeAreaPower.cpp LinPerf.cpp Task.cpp LWTask.cpp Bucket.cpp
 SRCS += ../timer/timer.cpp
 
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
